@@ -155,15 +155,30 @@ export default function Home() {
           </div>
 
           {/* Card 3 — placeholder */}
-          <div className="relative rounded-2xl border border-dashed border-white/[0.07] bg-white/[0.01] p-7 flex flex-col items-center justify-center gap-3">
-            <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center">
-              <span className="text-white/20 text-xl leading-none mb-0.5">
-                +
-              </span>
+          <div className="group relative rounded-2xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-sm p-7 flex flex-col gap-5 hover:border-[#00C8FF]/30 hover:bg-white/[0.05] transition-all duration-300">
+            {/* Accent glow */}
+            <div className="absolute top-0 right-6 w-24 h-px bg-gradient-to-r from-transparent via-[#00C8FF]/40 to-transparent" />
+            <div
+              className="w-12 h-12 rounded-xl flex items-center justify-center"
+              style={{
+                background: "rgba(0, 200, 255, 0.12)",
+                border: "1px solid rgba(0, 200, 255, 0.25)",
+              }}
+            >
+              <img
+                src="/images/reservation.png"
+                alt="Realtime"
+                className="w-6 h-6 object-contain"
+              />
             </div>
-            <span className="text-white/20 text-xs tracking-[0.2em] font-mono uppercase">
-              Coming Soon
-            </span>
+            <div>
+                <h3 className="text-white font-semibold text-base mb-1">
+                Drum Reservations
+                </h3>
+                <p className="text-white/40 text-sm leading-relaxed">
+                Streamlined reservation system for efficient drum management and allocation.
+                </p>
+            </div>
           </div>
         </div>
 
