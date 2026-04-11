@@ -284,11 +284,14 @@ export default function CutList() {
 
       // delete reservation if one was loaded
       if (reservationIdInput) {
-        const { error: deleteErr } = await supabase
-          .from("reservation")
-          .delete()
-          .eq("reservation_id", reservationIdInput);
-        if (deleteErr) throw deleteErr;
+        for (const it of items) {
+          const { error: deleteErr } = await supabase
+        .from("reservation")
+        .delete()
+        .eq("reservation_id", reservationIdInput)
+        .eq("drum_id", it.drum_id);
+          if (deleteErr) throw deleteErr;
+        }
       }
 
       toast.success("Cuts recorded successfully.");
