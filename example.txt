@@ -1,0 +1,310 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+
+type DrumCable = {
+  id: number;
+  drum_id: string;
+  brand: string;
+  type: string;
+  size: string;
+  curr_length: number;
+  initial_length: number;
+  testcertificate?: string | null;
+};
+
+const initialFormState = {
+  drum_id: '',
+  brand: '',
+  type: '',
+  size: '',
+  curr_length: '',
+  initial_length: '',
+  testcertificate: '',
+};
+
+export default function CablesViewPage() {
+  const supabase = createClient();
+  const [cables, setCables] = useState<DrumCable[]>([]);
+  const [form, setForm] = useState<typeof initialFormState>(initialFormState);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [status, setStatus] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+
+  const resetForm = () => {
+    setSelectedId(null);
+    setForm(initialFormState);
+  };
+
+  const loadCables = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('drum_cables')
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (error) {
+      setStatus(`Load error: ${error.message}`);
+      setLoading(false);
+      return;
+    }
+
+    setCables(data ?? []);
+    setStatus('');
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadCables();
+  }, []);
+
+  const handleChange = (key: keyof typeof initialFormState, value: string) => {
+    setForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLoading(true);
+    setStatus('');
+
+    const payload = {
+      drum_id: form.drum_id.trim(),
+      brand: form.brand.trim(),
+      type: form.type.trim(),
+      size: form.size.trim(),
+      curr_length: Number(form.curr_length),
+      initial_length: Number(form.initial_length),
+      testcertificate: form.testcertificate.trim() || null,
+    };
+
+    if (!payload.drum_id || !payload.brand || !payload.type || !payload.size) {
+      setStatus('Please fill in drum_id, brand, type, and size.');
+      setLoading(false);
+      return;
+    }
+
+    if (Number.isNaN(payload.curr_length) || Number.isNaN(payload.initial_length)) {
+      setStatus('Current length and initial length must be valid numbers.');
+      setLoading(false);
+      return;
+    }
+
+    if (selectedId === null) {
+      const { error } = await supabase.from('drum_cables').insert(payload);
+      if (error) {
+        setStatus(`Insert error: ${error.message}`);
+        setLoading(false);
+        return;
+      }
+      setStatus('Drum cable created successfully.');
+    } else {
+      const { error } = await supabase
+        .from('drum_cables')
+        .update(payload)
+        .eq('id', selectedId);
+      if (error) {
+        setStatus(`Update error: ${error.message}`);
+        setLoading(false);
+        return;
+      }
+      setStatus('Drum cable updated successfully.');
+    }
+
+    resetForm();
+    await loadCables();
+    setLoading(false);
+  };
+
+  const handleEdit = (cable: DrumCable) => {
+    setSelectedId(cable.id);
+    setForm({
+      drum_id: cable.drum_id,
+      brand: cable.brand,
+      type: cable.type,
+      size: cable.size,
+      curr_length: String(cable.curr_length),
+      initial_length: String(cable.initial_length),
+      testcertificate: cable.testcertificate ?? '',
+    });
+    setStatus('Editing selected cable.');
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Delete this drum cable?')) {
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.from('drum_cables').delete().eq('id', id);
+    if (error) {
+      setStatus(`Delete error: ${error.message}`);
+      setLoading(false);
+      return;
+    }
+    setStatus('Drum cable deleted.');
+    await loadCables();
+    setLoading(false);
+  };
+
+  return (
+    <div className="space-y-8 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto space-y-4">
+        <div className="rounded-2xl border bg-card p-6 shadow-sm">
+          <h1 className="text-2xl font-semibold">Drum Cables CRUD</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Create, read, update, and delete drum cable records. Required fields are drum_id, brand, type, size, current length, and initial length.
+          </p>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
+          <section className="rounded-2xl border bg-card p-6 shadow-sm">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-lg font-semibold">Create / Edit Cable</h2>
+              {selectedId !== null ? (
+                <Button variant="outline" size="sm" onClick={resetForm} type="button">
+                  Cancel edit
+                </Button>
+              ) : null}
+            </div>
+
+            <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm font-medium">
+                  Drum ID
+                  <Input
+                    value={form.drum_id}
+                    onChange={(event) => handleChange('drum_id', event.target.value)}
+                    placeholder="drum-123"
+                  />
+                </label>
+                <label className="space-y-2 text-sm font-medium">
+                  Brand
+                  <Input
+                    value={form.brand}
+                    onChange={(event) => handleChange('brand', event.target.value)}
+                    placeholder="Brand name"
+                  />
+                </label>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm font-medium">
+                  Type
+                  <Input
+                    value={form.type}
+                    onChange={(event) => handleChange('type', event.target.value)}
+                    placeholder="Type"
+                  />
+                </label>
+                <label className="space-y-2 text-sm font-medium">
+                  Size
+                  <Input
+                    value={form.size}
+                    onChange={(event) => handleChange('size', event.target.value)}
+                    placeholder="Size"
+                  />
+                </label>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm font-medium">
+                  Current length
+                  <Input
+                    type="number"
+                    value={form.curr_length}
+                    onChange={(event) => handleChange('curr_length', event.target.value)}
+                    placeholder="0"
+                  />
+                </label>
+                <label className="space-y-2 text-sm font-medium">
+                  Initial length
+                  <Input
+                    type="number"
+                    value={form.initial_length}
+                    onChange={(event) => handleChange('initial_length', event.target.value)}
+                    placeholder="0"
+                  />
+                </label>
+              </div>
+
+              <label className="space-y-2 text-sm font-medium">
+                Test certificate file path (optional)
+                <Input
+                  value={form.testcertificate}
+                  onChange={(event) => handleChange('testcertificate', event.target.value)}
+                  placeholder="/files/test-certificate.pdf"
+                />
+              </label>
+
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <Button type="submit" disabled={loading}>
+                  {selectedId === null ? 'Create cable' : 'Update cable'}
+                </Button>
+                <Button type="button" variant="outline" disabled={loading} onClick={resetForm}>
+                  Reset
+                </Button>
+                {status ? <p className="text-sm text-muted-foreground">{status}</p> : null}
+              </div>
+            </form>
+          </section>
+
+          <section className="rounded-2xl border bg-card p-6 shadow-sm">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-lg font-semibold">Cable list</h2>
+              <span className="rounded-full bg-muted px-3 py-1 text-sm text-muted-foreground">
+                {cables.length} items
+              </span>
+            </div>
+
+            <div className="mt-4 overflow-x-auto">
+              <table className="min-w-full divide-y divide-border text-sm">
+                <thead className="bg-muted text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-2">Drum ID</th>
+                    <th className="px-3 py-2">Brand</th>
+                    <th className="px-3 py-2">Type</th>
+                    <th className="px-3 py-2">Size</th>
+                    <th className="px-3 py-2">Current</th>
+                    <th className="px-3 py-2">Initial</th>
+                    <th className="px-3 py-2">Certificate</th>
+                    <th className="px-3 py-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {cables.map((cable) => (
+                    <tr key={cable.id} className="hover:bg-accent/50">
+                      <td className="px-3 py-2 font-medium">{cable.drum_id}</td>
+                      <td className="px-3 py-2">{cable.brand}</td>
+                      <td className="px-3 py-2">{cable.type}</td>
+                      <td className="px-3 py-2">{cable.size}</td>
+                      <td className="px-3 py-2">{cable.curr_length}</td>
+                      <td className="px-3 py-2">{cable.initial_length}</td>
+                      <td className="px-3 py-2 max-w-sm truncate">{cable.testcertificate || '-'}</td>
+                      <td className="px-3 py-2 space-x-2">
+                        <Button type="button" size="sm" variant="secondary" onClick={() => handleEdit(cable)}>
+                          Edit
+                        </Button>
+                        <Button type="button" size="sm" variant="destructive" onClick={() => handleDelete(cable.id)}>
+                          Delete
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                  {!cables.length ? (
+                    <tr>
+                      <td colSpan={8} className="px-3 py-5 text-center text-sm text-muted-foreground">
+                        No drum cables found.
+                      </td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}
