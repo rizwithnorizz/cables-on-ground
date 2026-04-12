@@ -259,40 +259,40 @@ export function DrumsTable() {
         </div>
 
         {/* Pivot Table by Size */}
-        <div className="overflow-x-auto overflow-y-auto">
-          <table className="border-collapse">
-            <thead>
+        <div className="overflow-x-auto overflow-y-auto max-h-[70vh] ">
+          <table className="border-collapse sticky top-0">
+            <thead className="sticky top-0 z-20  bg-[#111827]/30 backdrop-blur-sm">
               <tr>
-                {Object.keys(filteredCablesBySize).sort(numericSizeSort).map((size) => (
-                  <th key={size} >
-                    <div className="px-4 py-3 text-center text-2xl font-semibold text-gray-300 shadow-inner shadow-[#0047FF] bg-[#1a1f3a] rounded-xl ">
-                      {size}
-                    </div>
-                  </th>
-                ))}
+          {Object.keys(filteredCablesBySize).sort(numericSizeSort).map((size) => (
+            <th key={size} >
+              <div className="px-4 py-3 text-center text-2xl font-semibold text-gray-300 shadow-inner shadow-[#0047FF] bg-[#1a1f3a] rounded-xl ">
+          {size}
+              </div>
+            </th>
+          ))}
               </tr>
             </thead>
             <tbody>
               {/* Find the maximum number of drums in any size group */}
               {Array.from({ length: Math.max(...Object.values(filteredCablesBySize).map(cables => cables.length)) }, (_, rowIndex) => (
-                <tr key={rowIndex} className="divide-x divide-[#0047FF]/30">
-                  {Object.keys(filteredCablesBySize).sort(numericSizeSort).map((size) => {
-                    const cable = filteredCablesBySize[size][rowIndex];
-                    return (
-                      <td key={size} className="px-4 py-2 min-w-[10rem] max-w-[10rem] align-top ">
-                        {cable ? (
-                            <button onClick={() => setSelectedCable(cable)} className={`space-y-6 bg-[#111827]/80 border border-[#0047FF]/30 rounded-3xl shadow-lg ${cable.reserved ? 'shadow-[#FFFF00]/50' : 'shadow-[#0047FF]/10'} w-full h-full p-4 flex flex-col items-center justify-center transition-transform hover:scale-[1.02]`}>
-                            <div className="text-lg items-center flex justify-center">
-                              {cable.curr_length} M
-                            </div>
-                          </button>
-                        ) : (
-                          <div className="text-gray-500 text-xs italic h-full flex items-center">—</div>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
+          <tr key={rowIndex} className="divide-x divide-[#0047FF]/30">
+            {Object.keys(filteredCablesBySize).sort(numericSizeSort).map((size) => {
+              const cable = filteredCablesBySize[size][rowIndex];
+              return (
+          <td key={size} className="px-4 py-2 min-w-[10rem] max-w-[10rem] align-top ">
+            {cable ? (
+          <button onClick={() => setSelectedCable(cable)} className={`space-y-6 bg-[#111827]/80 border border-[#0047FF]/30 rounded-3xl shadow-lg ${cable.reserved ? 'shadow-[#FFFF00]/50' : 'shadow-[#0047FF]/10'} w-full h-full p-4 flex flex-col items-center justify-center transition-transform hover:scale-[1.02]`}>
+          <div className="text-lg items-center flex justify-center">
+            {cable.curr_length} M
+          </div>
+              </button>
+            ) : (
+              <div className="text-gray-500 text-xs italic h-full flex items-center">—</div>
+            )}
+          </td>
+              );
+            })}
+          </tr>
               ))}
             </tbody>
           </table>

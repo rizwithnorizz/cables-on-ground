@@ -16,9 +16,9 @@ interface SidebarItem {
 const allSidebarItems: SidebarItem[] = [
   { label: 'Dashboard', href: '/dashboard' },
   { label: 'Cables View', href: '/cables_view' },
-  { label: 'New Drum', href: '/new_drum' },
   { label: 'Cutting', href: '/cutting' },
-  { label: 'Reserve', href: '/reserve' },
+  { label: 'Reserve', href: '/reserve' }, 
+  { label: 'New Drum', href: '/new_drum' },
   { label: 'Transactions', href: '/transactions' },
 ];
 

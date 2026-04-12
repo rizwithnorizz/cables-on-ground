@@ -8,7 +8,13 @@ import { Button } from "@/components/ui/button";
 type Transaction = {
   id: string;
   created_at: string;
-  drum_id: string;
+  drum_id: {
+    id: number;
+    drum_id: string;
+    size: string;
+    type: { type_name: string };
+    brand: { brand_name: string };
+  };
   length_cut: number;
   balance_cable: number;
   ref_no: string | null;
@@ -29,11 +35,24 @@ export default function TransactionsList() {
       try {
         const { data, error } = await supabase
           .from("cable_transactions")
-          .select("*")
+          .select(`
+            id,
+            created_at,
+            drum_id (
+              id,
+              drum_id,
+              size,
+              type ( type_name ),
+              brand ( brand_name )
+            ),
+            length_cut,
+            balance_cable,
+            ref_no
+            `)
           .order("created_at", { ascending: true });
 
         if (error) throw error;
-        setTransactions(data ?? []);
+        setTransactions(data as any?? []);
       } catch (err) {
         console.error("Failed to load transactions:", err);
       } finally {
@@ -63,7 +82,7 @@ export default function TransactionsList() {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesRef = t.ref_no?.toLowerCase().includes(query);
-        const matchesDrumId = t.drum_id.toLowerCase().includes(query);
+        const matchesDrumId = t.drum_id.drum_id.toLowerCase().includes(query);
         if (!matchesRef && !matchesDrumId) return false;
       }
 
@@ -208,6 +227,15 @@ export default function TransactionsList() {
                           Drum ID
                         </th>
                         <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+                          Brand
+                        </th>
+                        <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+                          Type
+                        </th>
+                        <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+                          Size
+                        </th>
+                        <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
                           Length Cut (m)
                         </th>
                         <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
@@ -225,7 +253,16 @@ export default function TransactionsList() {
                           className="border-b border-[#0b1220] hover:bg-[#111827] transition"
                         >
                           <td className="px-2 py-2 text-white">
-                            {tx.drum_id}
+                            {tx.id}
+                          </td>
+                          <td className="px-2 py-2 text-white">
+                            {tx.drum_id.brand.brand_name}
+                          </td>
+                          <td className="px-2 py-2 text-white">
+                            {tx.drum_id.type.type_name}
+                          </td>
+                          <td className="px-2 py-2 text-white">
+                            {tx.drum_id.size}
                           </td>
                           <td className="px-2 py-2 text-white">
                             {tx.length_cut} METERS
