@@ -308,6 +308,9 @@ export function DrumsTable() {
           onClose={() => setSelectedCable(null)}
           brandName={selectedCable ? brandMap[String(selectedCable.brand)] : undefined}
           typeName={selectedCable ? typeMap[String(selectedCable.type)] : undefined}
+          onDelete={(cableId) => {
+            setCables(prevCables => prevCables.filter(c => c.id !== cableId));
+          }}
         />
       </div>
     </div>

@@ -39,11 +39,13 @@ export default function CableModal({
   onClose,
   brandName,
   typeName,
+  onDelete,
 }: {
   cable: DrumCable | null;
   onClose: () => void;
   brandName?: string;
   typeName?: string;
+  onDelete?: (cableId: bigint) => void;
 }) {
   const supabase = createClient();
   const router = useRouter();
@@ -224,6 +226,9 @@ export default function CableModal({
 
       if (error) throw error;
 
+      // Call onDelete callback to remove from client-side list
+      onDelete?.(cable.id);
+      
       setShowDeleteConfirm(false);
       onClose();
       router.refresh();
