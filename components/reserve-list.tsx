@@ -201,13 +201,19 @@ export default function ReserveList() {
           .from("reservation")
           .insert([
             {
-              reserved: true, 
               drum_id: it.id,
               length: amt,
               ref_no: reservationRef || null,
               reservation_id: nextReservationId,
             },
           ]);
+
+        const { error: updateErr } = await supabase 
+          .from("drum_cables")
+          .update({reserved: true})
+          .eq("id", it.id);
+
+        if (updateErr) throw updateErr; 
         if (insertErr) throw insertErr;
       }
 

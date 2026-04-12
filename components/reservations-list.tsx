@@ -29,6 +29,7 @@ export default function ReservationsList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -67,6 +68,45 @@ export default function ReservationsList() {
 
     loadData();
   }, [supabase]);
+
+  const handleDeleteReservation = async (reservationId: number, drumCableId: number) => {
+    setDeletingId(reservationId);
+    try {
+      // Delete the reservation
+      const { error: deleteErr } = await supabase
+        .from("reservation")
+        .delete()
+        .eq("id", reservationId);
+
+      if (deleteErr) throw deleteErr;
+
+      // Check if there are other reservations for this drum
+      const { data: remainingReservations, error: queryErr } = await supabase
+        .from("reservation")
+        .select("id")
+        .eq("drum_id", drumCableId);
+
+      if (queryErr) throw queryErr;
+
+      // If no other reservations, set reserved to false
+      if (!remainingReservations || remainingReservations.length === 0) {
+        const { error: updateErr } = await supabase
+          .from("drum_cables")
+          .update({ reserved: false })
+          .eq("id", drumCableId);
+
+        if (updateErr) throw updateErr;
+      }
+
+      // Remove from local state
+      setReservations(prev => prev.filter(r => r.id !== reservationId));
+      toast.success("Reservation deleted successfully");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete reservation");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const filteredReservations = useMemo(() => {
     return reservations.filter((r) => {
@@ -230,11 +270,12 @@ export default function ReservationsList() {
                 <table className="w-full text-sm table-fixed">
                   <thead>
                     <tr className="border-b border-[#0047FF]/20">
-                      <th className="w-1/5 text-left py-2 px-3 text-gray-300 font-medium">Brand</th>
-                      <th className="w-1/5 text-left py-2 px-3 text-gray-300 font-medium">Type</th>
-                      <th className="w-1/5 text-left py-2 px-3 text-gray-300 font-medium">Size</th>
-                      <th className="w-1/5 text-left py-2 px-3 text-gray-300 font-medium">Drum Length</th>
-                      <th className="w-1/5 text-right py-2 px-3 text-gray-300 font-medium">Reserved Length (M)</th>
+                      <th className="w-1/6 text-left py-2 px-3 text-gray-300 font-medium">Brand</th>
+                      <th className="w-1/6 text-left py-2 px-3 text-gray-300 font-medium">Type</th>
+                      <th className="w-1/6 text-left py-2 px-3 text-gray-300 font-medium">Size</th>
+                      <th className="w-1/6 text-left py-2 px-3 text-gray-300 font-medium">Drum Length</th>
+                      <th className="w-1/6 text-right py-2 px-3 text-gray-300 font-medium">Reserved Length (M)</th>
+                      <th className="w-1/6 text-right py-2 px-3 text-gray-300 font-medium">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -243,18 +284,29 @@ export default function ReservationsList() {
                         key={res.id}
                         className="border-b border-[#0047FF]/10 hover:bg-[#0047FF]/5"
                       >
-                        <td className="w-1/5 py-2 px-3 text-gray-400">
+                        <td className="w-1/6 py-2 px-3 text-gray-400">
                           {(Array.isArray(res.drum_cables.brand) ? res.drum_cables.brand[0]?.brand_name : res.drum_cables.brand?.brand_name) || "Unknown"}
                         </td>
-                        <td className="w-1/5 py-2 px-3 text-gray-400">
+                        <td className="w-1/6 py-2 px-3 text-gray-400">
                           {(Array.isArray(res.drum_cables.type) ? res.drum_cables.type[0]?.type_name : res.drum_cables.type?.type_name) || "Unknown"}
                         </td>
-                        <td className="w-1/5 py-2 px-3 text-gray-400">
+                        <td className="w-1/6 py-2 px-3 text-gray-400">
                           {res.drum_cables.size}
                         </td>
-                        <td className="w-1/5 py-2 px-3 text-white">{res.drum_cables.curr_length} m</td>
-                        <td className="w-1/5 py-2 px-3 text-right text-white font-semibold">
+                        <td className="w-1/6 py-2 px-3 text-white">{res.drum_cables.curr_length} m</td>
+                        <td className="w-1/6 py-2 px-3 text-right text-white font-semibold">
                           {res.length} m
+                        </td>
+                        <td className="w-1/6 py-2 px-3 text-right">
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            disabled={deletingId === res.id}
+                            onClick={() => handleDeleteReservation(res.id, res.drum_cables.id)}
+                            className="text-xs"
+                          >
+                            {deletingId === res.id ? "Deleting..." : "Delete"}
+                          </Button>
                         </td>
                       </tr>
                     ))}
