@@ -52,6 +52,12 @@ export default function CableModal({
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedCurrLength, setEditedCurrLength] = useState<number>(cable?.curr_length ?? 0);
+  const [editedInitialLength, setEditedInitialLength] = useState<number>(cable?.initial_length ?? 0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -62,6 +68,14 @@ export default function CableModal({
     };
     checkAuth();
   }, [supabase]);
+
+  useEffect(() => {
+    if (cable) {
+      setEditedCurrLength(cable.curr_length);
+      setEditedInitialLength(cable.initial_length);
+      setIsEditing(false);
+    }
+  }, [cable?.id]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -163,6 +177,64 @@ export default function CableModal({
     }
   };
 
+  const handleSaveLengths = async () => {
+    if (!cable) return;
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from("drum_cables")
+        .update({ 
+          curr_length: editedCurrLength, 
+          initial_length: editedInitialLength 
+        })
+        .eq("id", cable.id);
+
+      if (error) throw error;
+
+      // Update local state
+      cable.curr_length = editedCurrLength;
+      cable.initial_length = editedInitialLength;
+      setIsEditing(false);
+      router.refresh();
+    } catch (err) {
+      console.error("Failed to save lengths", err);
+      alert(err instanceof Error ? err.message : "Failed to save lengths");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    if (cable) {
+      setEditedCurrLength(cable.curr_length);
+      setEditedInitialLength(cable.initial_length);
+    }
+    setIsEditing(false);
+  };
+
+  const handleDeleteCable = async () => {
+    if (!cable) return;
+    
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("drum_cables")
+        .delete()
+        .eq("id", cable.id);
+
+      if (error) throw error;
+
+      setShowDeleteConfirm(false);
+      onClose();
+      router.refresh();
+    } catch (err) {
+      console.error("Failed to delete cable", err);
+      alert(err instanceof Error ? err.message : "Failed to delete cable");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <>
     <div className="fixed md:ml-64 inset-0 flex items-center justify-center z-[999]">
@@ -180,36 +252,100 @@ export default function CableModal({
                 {brandName ?? "Unknown brand"} · {typeName ?? "Unknown type"}
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="text-gray-300 px-2 py-1 rounded hover:bg-white/5"
-            >
-              ✕
-            </button>
+            <div className="flex gap-2">
+              {user && (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={isDeleting}
+                  className="text-red-500 hover:text-red-400 px-2 py-1 rounded hover:bg-red-500/10 disabled:opacity-50"
+                  title="Delete cable"
+                >
+                  {isDeleting ? "Deleting…" : "🗑️"}
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="text-gray-300 px-2 py-1 rounded hover:bg-white/5"
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
           <div className="mt-6 flex flex-col gap-4">
             <div className="bg-[#1a1f3a] p-4 rounded-lg border border-[#0047FF]/10">
-              <div className="text-sm text-gray-400">Remaining Length</div>
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-400">Remaining Length</div>
+                {user && !isEditing && (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="text-xs text-[#00C8FF] hover:underline"
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
               <div className="flex items-baseline justify-between mt-2">
-                <div className="text-3xl font-bold text-gray-100">
-                  {cable.curr_length}m
-                </div>
+                {isEditing ? (
+                  <div className="flex gap-2 items-baseline">
+                    <input
+                      type="number"
+                      value={editedCurrLength}
+                      onChange={(e) => setEditedCurrLength(parseFloat(e.target.value) || 0)}
+                      className="bg-[#0b1220] text-3xl font-bold text-gray-100 border border-[#0047FF]/30 rounded px-2 py-1 w-32"
+                    />
+                    <span className="text-3xl font-bold text-gray-100">m</span>
+                  </div>
+                ) : (
+                  <div className="text-3xl font-bold text-gray-100">
+                    {cable.curr_length}m
+                  </div>
+                )}
               </div>
               <div className="w-full bg-[#0b1220] h-3 rounded-full mt-3">
                 <div
                   className="h-3 rounded-full bg-emerald-500"
-                  style={{ width: `${100 - percentUsed}%` }}
+                  style={{ width: `${100 - (editedInitialLength > 0 ? Math.min(100, Math.round(((editedInitialLength - editedCurrLength) / editedInitialLength) * 100)) : 0)}%` }}
                 />
               </div>
               <div className="flex justify-between">
                 <div className="text-sm text-gray-400 mt-1">
-                  {percentUsed}% used
+                  {editedInitialLength > 0 ? Math.min(100, Math.round(((editedInitialLength - editedCurrLength) / editedInitialLength) * 100)) : 0}% used
                 </div>
-                <div className="text-sm text-gray-400">
-                  {cable.initial_length}m initial
-                </div>
+                {isEditing ? (
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="number"
+                      value={editedInitialLength}
+                      onChange={(e) => setEditedInitialLength(parseFloat(e.target.value) || 0)}
+                      className="bg-[#0b1220] text-sm text-gray-400 border border-[#0047FF]/30 rounded px-2 py-1 w-20"
+                    />
+                    <span className="text-sm text-gray-400">m initial</span>
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-400">
+                    {cable.initial_length}m initial
+                  </div>
+                )}
               </div>
+              {isEditing && (
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={handleSaveLengths}
+                    disabled={isSaving}
+                    className="flex-1 bg-[#0047FF] text-white px-3 py-2 rounded text-sm font-medium hover:bg-[#0047FF]/80 disabled:opacity-50"
+                  >
+                    {isSaving ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    onClick={handleCancelEdit}
+                    disabled={isSaving}
+                    className="flex-1 bg-[#0047FF]/20 text-gray-300 px-3 py-2 rounded text-sm font-medium hover:bg-[#0047FF]/30 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="space-y-3">
@@ -337,6 +473,35 @@ export default function CableModal({
         </div>
       </div>
     </div>
+
+    {/* Delete Confirmation Modal */}
+    {showDeleteConfirm && (
+      <div className="fixed md:ml-64 inset-0 flex items-center justify-center z-[1000]">
+        <div className="absolute inset-0 bg-black/80" onClick={() => !isDeleting && setShowDeleteConfirm(false)} />
+        <div className="relative z-10 w-full max-w-sm mx-4 bg-[#0f1724] rounded-2xl border border-red-500/30 p-6 shadow-lg">
+          <h2 className="text-lg font-semibold text-gray-100 mb-2">Delete Cable</h2>
+          <p className="text-gray-300 mb-6">
+            Are you sure you want to delete cable <span className="font-semibold">{cable?.drum_id}</span>? This action cannot be undone.
+          </p>
+          <div className="flex gap-3 justify-end">
+            <button
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={isDeleting}
+              className="px-4 py-2 bg-[#0047FF]/20 text-gray-300 rounded-lg font-medium hover:bg-[#0047FF]/30 disabled:opacity-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDeleteCable}
+              disabled={isDeleting}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 transition"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     </>
   );
 }
