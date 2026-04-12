@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { toast } from 'react-hot-toast';
+import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -50,7 +50,9 @@ export default function CutList() {
 
   const [items, setItems] = useState<CutItem[]>([]);
   const nextVersion = useRef(1);
-  const [addedDisabled, setAddedDisabled] = useState<Record<string, boolean>>({});
+  const [addedDisabled, setAddedDisabled] = useState<Record<string, boolean>>(
+    {},
+  );
   const [transactionRef, setTransactionRef] = useState("");
   const [reservationIdInput, setReservationIdInput] = useState<string>("");
   const [isLoadingReservation, setIsLoadingReservation] = useState(false);
@@ -152,10 +154,9 @@ export default function CutList() {
         .select("*")
         .eq("reservation_id", reservationIdInput);
 
-      
       if (error) throw error;
       if (reservations.length > 0) {
-        setTransactionRef(reservations[0].ref_no ?? ""); 
+        setTransactionRef(reservations[0].ref_no ?? "");
       }
       if (reservations && reservations.length > 0) {
         const newItems: CutItem[] = [];
@@ -188,7 +189,9 @@ export default function CutList() {
         setItems([]);
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to load reservation");
+      toast.error(
+        err instanceof Error ? err.message : "Failed to load reservation",
+      );
       setItems([]);
     } finally {
       setIsLoadingReservation(false);
@@ -241,7 +244,7 @@ export default function CutList() {
         return;
       }
       if (amt > it.available) {
-        toast.error(`Cut length for ${it.drum_id} exceeds available length`);
+        toast.error(`Cut length for ${it.id} exceeds available length`);
         return;
       }
     }
@@ -255,7 +258,7 @@ export default function CutList() {
       }
 
       for (const it of items) {
-        const amt = Number(it.cutLength); 
+        const amt = Number(it.cutLength);
         const { data: cableRow, error: fetchErr } = await supabase
           .from("drum_cables")
           .select("*")
@@ -286,11 +289,16 @@ export default function CutList() {
       if (reservationIdInput) {
         for (const it of items) {
           const { error: deleteErr } = await supabase
-        .from("reservation")
-        .delete()
-        .eq("reservation_id", reservationIdInput)
-        .eq("drum_id", it.drum_id);
+            .from("reservation")
+            .delete()
+            .eq("reservation_id", reservationIdInput)
+            .eq("drum_id", it.id);
           if (deleteErr) throw deleteErr;
+          const { error: updateErr } = await supabase
+            .from("drum_cables")
+            .update({ reserved: false })
+            .eq("id", it.id);
+          if (updateErr) throw updateErr;
         }
       }
 
@@ -371,36 +379,44 @@ export default function CutList() {
                   ))}
                 </select>
               </label>
-
             </div>
-            
-                <label className="space-y-2 text-sm text-gray-300">
-                Size
-                <div className="mt-2 grid grid-cols-4 gap-2">
-                  { availableSizes.length === 0 ? (
-                  <div className="text-sm text-gray-500">No sizes available</div>
-                  ) : (
-                  availableSizes.sort((a, b) => {
-                  const [numA1, numA2] = a.split('x').map(Number);
-                  const [numB1, numB2] = b.split('x').map(Number);
-                  return numA1 !== numB1 ? numA1 - numB1 : numA2 - numB2;
-                  }).map((s) => ( 
-                  <button
-                    key={s}
-                    onClick={() => setSizeFilter(s)}    
-                    className={`px-3 py-3 rounded ${sizeFilter === s ? "bg-emerald-500 text-white" : "bg-[#1b263b] text-gray-300"}`}
-                  >
-                    {s}
-                  </button>
-                  ))
-                  )}
-                </div>
-                </label>
+
+            <label className="space-y-2 text-sm text-gray-300">
+              Size
+              <div className="mt-2 grid grid-cols-4 gap-2">
+                {availableSizes.length === 0 ? (
+                  <div className="text-sm text-gray-500">
+                    No sizes available
+                  </div>
+                ) : (
+                  availableSizes
+                    .sort((a, b) => {
+                      const [numA1, numA2] = a.split("x").map(Number);
+                      const [numB1, numB2] = b.split("x").map(Number);
+                      return numA1 !== numB1 ? numA1 - numB1 : numA2 - numB2;
+                    })
+                    .map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setSizeFilter(s)}
+                        className={`px-3 py-3 rounded ${sizeFilter === s ? "bg-emerald-500 text-white" : "bg-[#1b263b] text-gray-300"}`}
+                      >
+                        {s}
+                      </button>
+                    ))
+                )}
+              </div>
+            </label>
 
             <div className="mb-4">
               <label className="space-y-2 text-sm text-gray-300">
                 Length to cut (m)
-                <Input type="number" placeholder="Length to cut" value={inputLength} onChange={(e) => setInputLength(e.target.value)} />
+                <Input
+                  type="number"
+                  placeholder="Length to cut"
+                  value={inputLength}
+                  onChange={(e) => setInputLength(e.target.value)}
+                />
               </label>
               <div className="mt-3 flex gap-2">
                 <Button
@@ -424,20 +440,31 @@ export default function CutList() {
                         (c.curr_length ?? 0) > 0,
                     );
                     if (candidates.length === 0) {
-                      toast.error("No available drums for selected brand/type/size");
+                      toast.error(
+                        "No available drums for selected brand/type/size",
+                      );
                       return;
                     }
 
-                    const enough = candidates.filter((c) => (c.curr_length ?? 0) >= L);
+                    const enough = candidates.filter(
+                      (c) => (c.curr_length ?? 0) >= L,
+                    );
                     let chosen: DrumCable | null = null;
 
                     if (enough.length > 0) {
-                      const opened = enough.filter((c) => (c.initial_length ?? 0) > (c.curr_length ?? 0));
+                      const opened = enough.filter(
+                        (c) => (c.initial_length ?? 0) > (c.curr_length ?? 0),
+                      );
+                      console.log(opened);
                       const pool = opened.length > 0 ? opened : enough;
-                      pool.sort((a, b) => (a.curr_length ?? 0) - (b.curr_length ?? 0));
+                      pool.sort(
+                        (a, b) => (a.curr_length ?? 0) - (b.curr_length ?? 0),
+                      );
                       chosen = pool[0];
                     } else {
-                      toast.error("No single drum has sufficient length to satisfy this cut");
+                      toast.error(
+                        "No single drum has sufficient length to satisfy this cut",
+                      );
                       return;
                     }
 
@@ -467,30 +494,29 @@ export default function CutList() {
                 Cut List
               </h3>
               <div className="mb-3 p-2 bg-[#0047FF]/10 border border-[#0047FF]/30 rounded text-sm text-gray-300">
-                
-              <label className="space-y-2 text-sm text-gray-300 mb-3 w-full">
-                Enter Reservation ID
-                <div className="flex gap-2">
-                  <Input
-                    className="flex-1"
-                    placeholder="Reservation ID"
-                    value={reservationIdInput}
-                    onChange={(e) => setReservationIdInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        handleFindReservation();
-                      }
-                    }}
-                  />
-                  <Button
-                    onClick={handleFindReservation}
-                    disabled={isLoadingReservation}
-                    className="px-4"
-                  >
-                    {isLoadingReservation ? "Finding…" : "Find"}
-                  </Button>
-                </div>
-              </label>
+                <label className="space-y-2 text-sm text-gray-300 mb-3 w-full">
+                  Enter Reservation ID
+                  <div className="flex gap-2">
+                    <Input
+                      className="flex-1"
+                      placeholder="Reservation ID"
+                      value={reservationIdInput}
+                      onChange={(e) => setReservationIdInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleFindReservation();
+                        }
+                      }}
+                    />
+                    <Button
+                      onClick={handleFindReservation}
+                      disabled={isLoadingReservation}
+                      className="px-4"
+                    >
+                      {isLoadingReservation ? "Finding…" : "Find"}
+                    </Button>
+                  </div>
+                </label>
               </div>
               <label className="space-y-2 text-sm text-gray-300 mb-3">
                 Reference
@@ -526,10 +552,14 @@ export default function CutList() {
                         />
                       </div>
                       <div className="">
-                        {brands.find((b) => String(b.id) === brandFilter)?.brand_name} - {types.find((i) => i.id === it.type)?.type_name} 
+                        {
+                          brands.find((b) => String(b.id) === brandFilter)
+                            ?.brand_name
+                        }{" "}
+                        - {types.find((i) => i.id === it.type)?.type_name}
                       </div>
                       <div className="text-lg text-white font-semibold">
-                       {it.size} - {it.available}m
+                        {it.size} - {it.available}m
                       </div>
                       <div className="text-xs text-gray-400">{it.drum_id}</div>
                       <Button
