@@ -445,7 +445,6 @@ export default function CutList() {
                           .eq("drum_id", candidate.id);
 
                         if (error) throw error;
-
                         return {
                           cable: candidate,
                           hasReservation: reservations && reservations.length > 0,
