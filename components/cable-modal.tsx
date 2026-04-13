@@ -390,6 +390,11 @@ export default function CableModal({
         .not("testcertificate", "is", null)
         .neq("id", cable.id);
 
+      // Filter for unique certificates
+      const uniqueData = Array.from(
+        new Map(data?.map((item) => [item.testcertificate, item]) || []).values()
+      );
+
       if (error) throw error;
       setSmallCables(data ?? []);
       setShowSmallCableSelector(true);
