@@ -32,7 +32,9 @@ export default function ReservationsList() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
     const loadData = async () => {
+      if (!isMounted) return;
       setLoading(true);
       try {
         const { data, error } = await supabase
@@ -56,17 +58,22 @@ export default function ReservationsList() {
 
         if (error) throw error;
 
-        setReservations((data as any) ?? []);
+        if (isMounted) setReservations((data as any) ?? []);
       } catch (err) {
-        toast.error(
-          err instanceof Error ? err.message : "Failed to load reservations"
-        );
+        if (isMounted) {
+          toast.error(
+            err instanceof Error ? err.message : "Failed to load reservations"
+          );
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     loadData();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleDeleteReservation = async (reservationId: number, drumCableId: number) => {

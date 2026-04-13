@@ -50,12 +50,19 @@ export default function CutList() {
 
   const [items, setItems] = useState<CutItem[]>([]);
   const nextVersion = useRef(1);
-  const [addedDisabled, setAddedDisabled] = useState<Record<string, boolean>>(
-    {},
-  );
+  const [addedDisabled, setAddedDisabled] = useState<Record<string, boolean>>({});
+  const timeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
   const [transactionRef, setTransactionRef] = useState("");
   const [reservationIdInput, setReservationIdInput] = useState<string>("");
   const [isLoadingReservation, setIsLoadingReservation] = useState(false);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(timeoutRef.current).forEach(timeout => clearTimeout(timeout));
+      timeoutRef.current = {};
+    };
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -100,28 +107,6 @@ export default function CutList() {
     if (!typeFilter && types.length > 0) setTypeFilter(String(types[0].id));
   }, [brands, types, brandFilter, typeFilter]);
 
-  const brandMap = useMemo(
-    () => Object.fromEntries(brands.map((b) => [b.id, b.brand_name])),
-    [brands],
-  );
-  const typeMap = useMemo(
-    () => Object.fromEntries(types.map((t) => [t.id, t.type_name])),
-    [types],
-  );
-
-  const cablesFilteredByBrand = useMemo(() => {
-    if (!brandFilter) return availableCables;
-    return availableCables.filter(
-      (c) => String(c.brand) === String(brandFilter),
-    );
-  }, [availableCables, brandFilter]);
-
-  const availableTypes = useMemo(() => {
-    const setIds = new Set<number>();
-    cablesFilteredByBrand.forEach((c) => setIds.add(c.type));
-    return types.filter((t) => setIds.has(t.id));
-  }, [cablesFilteredByBrand, types]);
-
   const availableSizes = useMemo(() => {
     const setS = new Set<string>();
     availableCables.forEach((c) => {
@@ -131,15 +116,6 @@ export default function CutList() {
     });
     return Array.from(setS).sort();
   }, [availableCables, brandFilter, typeFilter]);
-
-  const drumsMatchingFilters = useMemo(() => {
-    return availableCables.filter((c) => {
-      if (brandFilter && String(c.brand) !== String(brandFilter)) return false;
-      if (typeFilter && String(c.type) !== String(typeFilter)) return false;
-      if (sizeFilter && c.size !== sizeFilter) return false;
-      return (c.curr_length ?? 0) > 0;
-    });
-  }, [availableCables, brandFilter, typeFilter, sizeFilter]);
 
   const handleFindReservation = async () => {
     if (!reservationIdInput.trim()) {
@@ -219,10 +195,17 @@ export default function CutList() {
       },
     ]);
     setAddedDisabled((prev) => ({ ...prev, [id]: true }));
-    setTimeout(
-      () => setAddedDisabled((prev) => ({ ...prev, [id]: false })),
-      700,
-    );
+    
+    // Clear previous timeout if exists
+    if (timeoutRef.current[id]) {
+      clearTimeout(timeoutRef.current[id]);
+    }
+    
+    // Store new timeout for cleanup on unmount
+    timeoutRef.current[id] = setTimeout(() => {
+      setAddedDisabled((prev) => ({ ...prev, [id]: false }));
+      delete timeoutRef.current[id];
+    }, 700);
   };
 
   const removeItem = (cut_version: number) =>
@@ -340,7 +323,7 @@ export default function CutList() {
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3 mb-5">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 mb-5">
               <label className="space-y-2 text-sm text-gray-300">
                 Brand
                 <select

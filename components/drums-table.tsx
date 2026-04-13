@@ -43,7 +43,9 @@ export function DrumsTable() {
 
   // Load cables and lookup tables from Supabase
   useEffect(() => {
+    let isMounted = true;
     const loadData = async () => {
+      if (!isMounted) return;
       setLoading(true);
       try {
         const [cablesResult, typesResult, brandsResult] = await Promise.all([
@@ -56,21 +58,28 @@ export function DrumsTable() {
           throw cablesResult.error || typesResult.error || brandsResult.error;
         }
 
-        setCables(cablesResult.data ?? []);
-        setTypes(typesResult.data ?? []);
-        setBrands(brandsResult.data ?? []);
-        setError('');
+        if (isMounted) {
+          setCables(cablesResult.data ?? []);
+          setTypes(typesResult.data ?? []);
+          setBrands(brandsResult.data ?? []);
+          setError('');
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load drums');
-        setCables([]);
-        setTypes([]);
-        setBrands([]);
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Failed to load drums');
+          setCables([]);
+          setTypes([]);
+          setBrands([]);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     loadData();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Default brand/type filters to first lookup values when available

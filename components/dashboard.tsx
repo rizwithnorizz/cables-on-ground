@@ -45,7 +45,9 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
     const loadData = async () => {
+      if (!isMounted) return;
       setLoading(true);
       try {
         const [cablesRes, typesRes, transRes, reservRes] = await Promise.all([
@@ -62,18 +64,23 @@ export function Dashboard() {
             .order("created_at", { ascending: false }),
         ]);
 
-        setCables(cablesRes.data ?? []);
-        setTypes(typesRes.data ?? []);
-        setTransactions(transRes.data ?? []);
-        setReservations(reservRes.data ?? []);
+        if (isMounted) {
+          setCables(cablesRes.data ?? []);
+          setTypes(typesRes.data ?? []);
+          setTransactions(transRes.data ?? []);
+          setReservations(reservRes.data ?? []);
+        }
       } catch (err) {
         console.error("Failed to load dashboard data", err);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     loadData();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Calculate stats
@@ -129,7 +136,14 @@ export function Dashboard() {
 
   // Recent activity (combined transactions and reservations)
   const recentActivity = useMemo(() => {
-    const activity: any[] = [];
+    const activity: Array<{
+      id: string | bigint;
+      type: "cut" | "reserve";
+      drum_id: string;
+      amount: number;
+      date: string;
+      ref_no: string | null;
+    }> = [];
 
     transactions.forEach((t) => {
       activity.push({
@@ -166,7 +180,7 @@ export function Dashboard() {
     );
   }
 
-  const maxStockLength = Math.max(...stockByType.map((s) => s.length));
+  const maxStockLength = stockByType.length > 0 ? Math.max(...stockByType.map((s) => s.length)) : 1;
 
   return (
     <div className="p-8 space-y-8">

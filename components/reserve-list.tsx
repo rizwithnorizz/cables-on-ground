@@ -13,6 +13,7 @@ type DrumCable = {
   type: number;
   size: string;
   curr_length: number;
+  available: number;
   initial_length: number;
 };
 
@@ -47,15 +48,24 @@ export default function ReserveList() {
   const [items, setItems] = useState<ReserveItem[]>([]);
   const nextVersion = useRef(1);
   const [addedDisabled, setAddedDisabled] = useState<Record<string, boolean>>({});
+  const timeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
   const [reservationRef, setReservationRef] = useState("");
   const [selectedDrumId, setSelectedDrumId] = useState<string>("");
   const [nextReservationId, setNextReservationId] = useState<number | null>(null);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(timeoutRef.current).forEach(timeout => clearTimeout(timeout));
+      timeoutRef.current = {};
+    };
+  }, []);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
-        const [typesRes, brandsRes, cablesRes] = await Promise.all([
+        const [typesRes, brandsRes, cablesRes, reservationsRes] = await Promise.all([
           supabase.from("type").select("*").order("id", { ascending: true }),
           supabase
             .from("brand")
@@ -67,15 +77,40 @@ export default function ReserveList() {
             .gt("curr_length", 0)
             .order("size", { ascending: true })
             .order("curr_length", { ascending: false }),
+          supabase
+            .from("reservation")
+            .select("drum_id, length")
+            .order("created_at", { ascending: false }),
         ]);
 
-        if (typesRes.error || brandsRes.error || cablesRes.error) {
-          throw typesRes.error || brandsRes.error || cablesRes.error;
+        if (typesRes.error || brandsRes.error || cablesRes.error || reservationsRes.error) {
+          throw typesRes.error || brandsRes.error || cablesRes.error || reservationsRes.error;
         }
+
+        // Build map of drum_id -> total reserved length (single pass)
+        const reservationMap = new Map<number, number>();
+        (reservationsRes.data ?? []).forEach((res) => {
+          const current = reservationMap.get(res.drum_id) ?? 0;
+          reservationMap.set(res.drum_id, current + (res.length ?? 0));
+        });
+
+        // Calculate available length for each drum
+        const cablesWithAvailable = (cablesRes.data ?? []).map((cable) => {
+          const totalReserved = reservationMap.get(cable.id) ?? 0;
+          const availableLength = cable.curr_length - totalReserved;
+
+          return {
+            ...cable,
+            available: availableLength,
+          };
+        });
+
+        // Filter out drums with no available length
+        const filteredCables = cablesWithAvailable.filter((c) => c.available > 0);
 
         setTypes(typesRes.data ?? []);
         setBrands(brandsRes.data ?? []);
-        setAvailableCables(cablesRes.data ?? []);
+        setAvailableCables(filteredCables);
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Failed to load data");
         setTypes([]);
@@ -105,19 +140,6 @@ export default function ReserveList() {
     setNextReservationId(randomId);
   }, []);
 
-  const cablesFilteredByBrand = useMemo(() => {
-    if (!brandFilter) return availableCables;
-    return availableCables.filter(
-      (c) => String(c.brand) === String(brandFilter),
-    );
-  }, [availableCables, brandFilter]);
-
-  const availableTypes = useMemo(() => {
-    const setIds = new Set<number>();
-    cablesFilteredByBrand.forEach((c) => setIds.add(c.type));
-    return types.filter((t) => setIds.has(t.id));
-  }, [cablesFilteredByBrand, types]);
-
   const availableSizes = useMemo(() => {
     const setS = new Set<string>();
     availableCables.forEach((c) => {
@@ -143,28 +165,6 @@ export default function ReserveList() {
     if (!cable) return;
 
     const L = Number(reserveLen);
-    
-    // Check existing reservations for this drum
-    try {
-      const { data: existingReservations, error: queryError } = await supabase
-        .from("reservation")
-        .select("length")
-        .eq("drum_id", cable.id);
-
-      if (queryError) throw queryError;
-
-      const totalExistingReservations = existingReservations?.reduce((sum, r) => sum + (r.length ?? 0), 0) ?? 0;
-      const remainingCapacity = cable.curr_length - totalExistingReservations;
-      if (L >= remainingCapacity) {
-        toast.error(
-          `Insufficient capacity. Pick another drum.`
-        );
-        return;
-      }
-    } catch (err) {
-      toast.error("Failed to check existing reservations");
-      return;
-    }
 
     const version = nextVersion.current++;
     setItems((prev) => [
@@ -182,10 +182,18 @@ export default function ReserveList() {
       },
     ]);
     setAddedDisabled((prev) => ({ ...prev, [String(id)]: true }));
-    setTimeout(
-      () => setAddedDisabled((prev) => ({ ...prev, [String(id)]: false })),
-      700,
-    );
+    
+    // Clear previous timeout if exists
+    const timeoutKey = String(id);
+    if (timeoutRef.current[timeoutKey]) {
+      clearTimeout(timeoutRef.current[timeoutKey]);
+    }
+    
+    // Store new timeout for cleanup on unmount
+    timeoutRef.current[timeoutKey] = setTimeout(() => {
+      setAddedDisabled((prev) => ({ ...prev, [timeoutKey]: false }));
+      delete timeoutRef.current[timeoutKey];
+    }, 700);
   };
 
   const removeItem = (reserve_version: number) =>
@@ -205,10 +213,6 @@ export default function ReserveList() {
       const amt = Number(it.reserveLength);
       if (!it.reserveLength || Number.isNaN(amt) || amt <= 0) {
         toast.error(`Invalid reserve length for ${it.drum_id}`);
-        return;
-      }
-      if (amt > it.available) {
-        toast.error(`Reserve length for ${it.drum_id} exceeds available length`);
         return;
       }
     }
@@ -241,21 +245,12 @@ export default function ReserveList() {
         if (updateErr) throw updateErr; 
         if (insertErr) throw insertErr;
       }
-
-
       toast.success("Reservation recorded successfully.");
       setItems([]);
       setReservationRef("");
       const newRandomId = Math.floor(Math.random() * 100000);
       setNextReservationId(newRandomId);
-
-      const { data } = await supabase
-        .from("drum_cables")
-        .select("*")
-        .gt("curr_length", 0)
-        .order("size", { ascending: true })
-        .order("curr_length", { ascending: false });
-      setAvailableCables(data ?? []);
+      window.location.reload();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to submit reservation");
     } finally {
@@ -277,7 +272,7 @@ export default function ReserveList() {
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3 mb-5">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 mb-5">
               <label className="space-y-2 text-sm text-gray-300">
                 Brand
                 <select
@@ -366,7 +361,7 @@ export default function ReserveList() {
                       value={String(drum.id)}
                       className="bg-[#0b1220] text-white"
                     >
-                      {drum.drum_id} - {drum.curr_length}m available + {drum.id}
+                      {drum.available}m available - FROM {drum.curr_length}m
                     </option>
                   ))}
                 </select>

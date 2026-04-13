@@ -183,7 +183,9 @@ export default function CableModal({
   }, [cable]);
 
   useEffect(() => {
+    let isMounted = true;
     const loadBrandTypes = async () => {
+      if (!isMounted) return;
       setLoadingBrandTypes(true);
       try {
         const [{ data: brandData, error: brandError }, { data: typeData, error: typeError }] = await Promise.all([
@@ -194,16 +196,21 @@ export default function CableModal({
         if (brandError) throw brandError;
         if (typeError) throw typeError;
 
-        setBrands(brandData ?? []);
-        setTypes(typeData ?? []);
+        if (isMounted) {
+          setBrands(brandData ?? []);
+          setTypes(typeData ?? []);
+        }
       } catch (err) {
         console.error("Failed to load brands and types", err);
       } finally {
-        setLoadingBrandTypes(false);
+        if (isMounted) setLoadingBrandTypes(false);
       }
     };
 
     loadBrandTypes();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (!cable) return null;

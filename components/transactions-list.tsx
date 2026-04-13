@@ -33,7 +33,9 @@ export default function TransactionsList() {
   const itemsPerPage = 20;
 
   useEffect(() => {
+    let isMounted = true;
     const loadTransactions = async () => {
+      if (!isMounted) return;
       setLoading(true);
       try {
         const { data, error } = await supabase
@@ -56,15 +58,18 @@ export default function TransactionsList() {
           .order("created_at", { ascending: false });
 
         if (error) throw error;
-        setTransactions(data as any?? []);
+        if (isMounted) setTransactions(data as any?? []);
       } catch (err) {
         console.error("Failed to load transactions:", err);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     loadTransactions();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const filteredTransactions = useMemo(() => {

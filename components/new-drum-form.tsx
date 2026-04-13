@@ -38,7 +38,9 @@ export default function NewDrumForm() {
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
     const loadLookupData = async () => {
+      if (!isMounted) return;
       setLoading(true);
       try {
         const [typesResult, brandsResult, sizesResult] = await Promise.all([
@@ -57,19 +59,26 @@ export default function NewDrumForm() {
           throw typesResult.error || brandsResult.error || sizesResult.error;
         }
 
-        setTypes(typesResult.data ?? []);
-        setBrands(brandsResult.data ?? []);
-        setDrumSizes(sizesResult.data ?? []);
+        if (isMounted) {
+          setTypes(typesResult.data ?? []);
+          setBrands(brandsResult.data ?? []);
+          setDrumSizes(sizesResult.data ?? []);
+        }
       } catch (err) {
-        toast.error(
-          err instanceof Error ? err.message : "Failed to load lookup data",
-        );
+        if (isMounted) {
+          toast.error(
+            err instanceof Error ? err.message : "Failed to load lookup data",
+          );
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     loadLookupData();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Default brand/type filters to first lookup values when available
