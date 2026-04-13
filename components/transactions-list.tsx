@@ -261,7 +261,7 @@ export default function TransactionsList() {
                           className="border-b border-[#0b1220] hover:bg-[#111827] transition"
                         >
                           <td className="px-2 py-2 text-white">
-                            {tx.id}
+                            { tx.drum_id.drum_id ? tx.drum_id.drum_id : <span className="text-gray-500">Unavailable Drum Number</span> }
                           </td>
                           <td className="px-2 py-2 text-white">
                             {tx.drum_id.brand.brand_name}
@@ -274,7 +274,7 @@ export default function TransactionsList() {
                           </td>
                           
                           <td className="px-2 py-2 text-white">
-                            {tx.balance_cable + tx.length_cut} METERSs
+                            {tx.balance_cable + tx.length_cut} METERS
                           </td>
                           <td className="px-2 py-2 text-white">
                             {tx.length_cut} METERS

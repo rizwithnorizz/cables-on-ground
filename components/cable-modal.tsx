@@ -44,6 +44,15 @@ type TypeOption = {
   type_name: string;
 };
 
+type SmallCable = {
+  id: bigint;
+  drum_id: string;
+  brand: number;
+  type: number;
+  size: string;
+  testcertificate: string;
+};
+
 export default function CableModal({
   cable,
   onClose,
@@ -82,6 +91,11 @@ export default function CableModal({
   const [types, setTypes] = useState<TypeOption[]>([]);
   const [loadingBrandTypes, setLoadingBrandTypes] = useState(false);
   const [isSavingDetails, setIsSavingDetails] = useState(false);
+  const [showSmallCableSelector, setShowSmallCableSelector] = useState(false);
+  const [smallCables, setSmallCables] = useState<SmallCable[]>([]);
+  const [loadingSmallCables, setLoadingSmallCables] = useState(false);
+  const [selectedSmallCableId, setSelectedSmallCableId] = useState<string>("");
+  const [isCopyingCert, setIsCopyingCert] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -108,7 +122,10 @@ export default function CableModal({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+        setShowSmallCableSelector(false);
+      };
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -360,6 +377,70 @@ export default function CableModal({
     setIsEditingDetails(false);
   };
 
+  const fetchSmallCablesWithSameCriteria = async () => {
+    if (!cable) return;
+    setLoadingSmallCables(true);
+    try {
+      const { data, error } = await supabase
+        .from("drum_cables")
+        .select("id, drum_id, brand, type, size, testcertificate")
+        .eq("brand", cable.brand)
+        .eq("type", cable.type)
+        .eq("size", cable.size)
+        .not("testcertificate", "is", null)
+        .neq("id", cable.id);
+
+      if (error) throw error;
+      setSmallCables(data ?? []);
+      setShowSmallCableSelector(true);
+    } catch (err) {
+      console.error("Failed to load small cables", err);
+      alert(err instanceof Error ? err.message : "Failed to load cables");
+    } finally {
+      setLoadingSmallCables(false);
+    }
+  };
+
+  const handleSaveCertificateFromSmallCable = async () => {
+    if (!cable || !selectedSmallCableId) return;
+    
+    setIsCopyingCert(true);
+    try {
+      // Get the certificate from the selected small cable
+      const selectedSmallCable = smallCables.find((c) => c.id.toString() === selectedSmallCableId);
+
+      if (!selectedSmallCable?.testcertificate) {
+        throw new Error("Selected cable has no certificate");
+      }
+
+      // Update current cable with the certificate URL
+      const { error } = await supabase
+        .from("drum_cables")
+        .update({ testcertificate: selectedSmallCable.testcertificate })
+        .eq("id", cable.id);
+
+      if (error) throw error;
+
+      // Update local state
+      cable.testcertificate = selectedSmallCable.testcertificate;
+      setShowSmallCableSelector(false);
+      setSelectedSmallCableId("");
+      setSmallCables([]);
+      router.refresh();
+    } catch (err) {
+      console.error("Failed to copy certificate", err);
+      alert(err instanceof Error ? err.message : "Failed to copy certificate");
+    } finally {
+      setIsCopyingCert(false);
+    }
+  };
+
+  const handleCancelSmallCableSelector = () => {
+    setShowSmallCableSelector(false);
+    setSelectedSmallCableId("");
+    setSmallCables([]);
+  };
+
   const handleDeleteCable = async () => {
     if (!cable) return;
     
@@ -386,10 +467,11 @@ export default function CableModal({
     }
   };
 
+
   return (
     <>
     <div className="fixed md:ml-64 inset-0 flex items-center justify-center z-[999]">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/60" onClick={() => { onClose(); setShowSmallCableSelector(false);}} />
 
       <div className="relative z-10 w-full max-w-5xl mx-4 bg-[#0f1724] rounded-2xl border border-[#0047FF]/30 p-6 shadow-lg flex gap-6 max-h-[85vh] overflow-hidden">
         {/* Left column */}
@@ -415,7 +497,7 @@ export default function CableModal({
                 </button>
               )}
               <button
-                onClick={onClose}
+                onClick={() => { onClose(); setShowSmallCableSelector(false);}} 
                 className="text-gray-300 px-2 py-1 rounded hover:bg-white/5"
               >
                 ✕
@@ -614,7 +696,49 @@ export default function CableModal({
               <div className="bg-[#1a1f3a] p-3 rounded-lg border border-[#0047FF]/10 text-sm">
                 <div className="text-xs text-gray-400">Test Certificate</div>
                 <div className="mt-2">
-                  {cable.testcertificate && !selectedCertFile ? (
+                  {showSmallCableSelector ? (
+                    <div className="space-y-3">
+                      {loadingSmallCables ? (
+                        <div className="text-sm text-gray-400">Loading cables...</div>
+                      ) : smallCables.length === 0 ? (
+                        <div className="text-sm text-gray-500">
+                          No cables found with the same brand, type, and size that have a certificate.
+                        </div>
+                      ) : (
+                        <>
+                          <select
+                            value={selectedSmallCableId?.toString() ?? ""}
+                            onChange={(e) => setSelectedSmallCableId(e.target.value)}
+                            disabled={isCopyingCert}
+                            className="w-full bg-[#0b1220] text-gray-100 border border-[#0047FF]/30 rounded px-2 py-2 text-sm disabled:opacity-50"
+                          >
+                            <option value="">Select a cable</option>
+                            {smallCables.map((smallCable) => (
+                              <option key={smallCable.id} value={smallCable.id.toString()}>
+                                {smallCable.drum_id}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={handleSaveCertificateFromSmallCable}
+                              disabled={isCopyingCert || !selectedSmallCableId}
+                              className="flex-1 bg-emerald-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
+                            >
+                              {isCopyingCert ? "Copying..." : "Save"}
+                            </button>
+                            <button
+                              onClick={handleCancelSmallCableSelector}
+                              disabled={isCopyingCert}
+                              className="flex-1 bg-[#0047FF]/20 text-gray-300 px-3 py-2 rounded text-sm font-medium hover:bg-[#0047FF]/30 disabled:opacity-50"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ) : cable.testcertificate && !selectedCertFile ? (
                     <div className="flex items-center justify-between gap-2">
                       <a
                         href={cable.testcertificate}
@@ -668,29 +792,38 @@ export default function CableModal({
                       </div>
                     </div>
                   ) : (
-                    <label
-                      className={`block w-full cursor-pointer rounded border-dashed border-2 p-4 text-center transition-colors ${
-                        isDraggingCert
-                          ? "border-[#0047FF] bg-[#0047FF]/10 text-gray-300"
-                          : "border-[#0047FF]/20 text-gray-400 hover:border-[#0047FF]/40"
-                      }`}
-                      onDragOver={handleDragOver}
-                      onDragLeave={handleDragLeave}
-                      onDrop={handleDrop}
-                    >
-                      <input
-                        type="file"
-                        accept="application/pdf,image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setSelectedCertFile(file);
-                          }
-                        }}
-                      />
-                      {isDraggingCert ? "Drop certificate here" : "+ Upload Certificate (PDF)"}
-                    </label>
+                    <div className="space-y-2">
+                      <label
+                        className={`block w-full cursor-pointer rounded border-dashed border-2 p-4 text-center transition-colors ${
+                          isDraggingCert
+                            ? "border-[#0047FF] bg-[#0047FF]/10 text-gray-300"
+                            : "border-[#0047FF]/20 text-gray-400 hover:border-[#0047FF]/40"
+                        }`}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                      >
+                        <input
+                          type="file"
+                          accept="application/pdf,image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setSelectedCertFile(file);
+                            }
+                          }}
+                        />
+                        {isDraggingCert ? "Drop certificate here" : "+ Upload Certificate (PDF)"}
+                      </label>
+                      <button
+                        onClick={fetchSmallCablesWithSameCriteria}
+                        disabled={loadingSmallCables}
+                        className="w-full bg-[#0047FF]/30 text-gray-300 px-3 py-2 rounded text-sm font-medium hover:bg-[#0047FF]/50 disabled:opacity-50 transition"
+                      >
+                        {loadingSmallCables ? "Loading..." : "Small cable"}
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
