@@ -712,10 +712,10 @@ export default function CableModal({
                             disabled={isCopyingCert}
                             className="w-full bg-[#0b1220] text-gray-100 border border-[#0047FF]/30 rounded px-2 py-2 text-sm disabled:opacity-50"
                           >
-                            <option value="">Select a cable</option>
+                            <option value="">Select a test certificate</option>
                             {smallCables.map((smallCable) => (
                               <option key={smallCable.id} value={smallCable.id.toString()}>
-                                {smallCable.drum_id}
+                                {smallCable.testcertificate?.split('/').pop()}
                               </option>
                             ))}
                           </select>
