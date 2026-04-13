@@ -74,7 +74,7 @@ export function Dashboard() {
     };
 
     loadData();
-  }, [supabase]);
+  }, []);
 
   // Calculate stats
   const stats = useMemo(() => {

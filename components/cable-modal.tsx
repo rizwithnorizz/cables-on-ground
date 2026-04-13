@@ -105,7 +105,7 @@ export default function CableModal({
       setUser(user ?? null);
     };
     checkAuth();
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
     if (cable) {
@@ -156,7 +156,7 @@ export default function CableModal({
     return () => {
       mounted = false;
     };
-  }, [cable, supabase]);
+  }, [cable]);
 
   useEffect(() => {
     if (!cable) return;
@@ -180,7 +180,7 @@ export default function CableModal({
     return () => {
       mounted = false;
     };
-  }, [cable, supabase]);
+  }, [cable]);
 
   useEffect(() => {
     const loadBrandTypes = async () => {
@@ -204,7 +204,7 @@ export default function CableModal({
     };
 
     loadBrandTypes();
-  }, [supabase]);
+  }, []);
 
   if (!cable) return null;
 

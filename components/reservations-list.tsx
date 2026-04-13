@@ -67,7 +67,7 @@ export default function ReservationsList() {
     };
 
     loadData();
-  }, [supabase]);
+  }, []);
 
   const handleDeleteReservation = async (reservationId: number, drumCableId: number) => {
     setDeletingId(reservationId);

@@ -87,7 +87,7 @@ export default function ReserveList() {
     };
 
     load();
-  }, [supabase]);
+  }, []);
 
   // default filters
   useEffect(() => {
@@ -137,10 +137,35 @@ export default function ReserveList() {
     });
   }, [availableCables, brandFilter, typeFilter, sizeFilter]);
 
-  const addItemFromDrum = (id: number, reserveLen?: string) => {
+  const addItemFromDrum = async (id: number, reserveLen?: string) => {
     if (!id) return;
     const cable = availableCables.find((c) => c.id === id);
     if (!cable) return;
+
+    const L = Number(reserveLen);
+    
+    // Check existing reservations for this drum
+    try {
+      const { data: existingReservations, error: queryError } = await supabase
+        .from("reservation")
+        .select("length")
+        .eq("drum_id", cable.id);
+
+      if (queryError) throw queryError;
+
+      const totalExistingReservations = existingReservations?.reduce((sum, r) => sum + (r.length ?? 0), 0) ?? 0;
+      const remainingCapacity = cable.curr_length - totalExistingReservations;
+      if (L >= remainingCapacity) {
+        toast.error(
+          `Insufficient capacity. Pick another drum.`
+        );
+        return;
+      }
+    } catch (err) {
+      toast.error("Failed to check existing reservations");
+      return;
+    }
+
     const version = nextVersion.current++;
     setItems((prev) => [
       ...prev,
@@ -383,30 +408,7 @@ export default function ReserveList() {
                       return;
                     }
 
-                    // Check existing reservations for this drum
-                    try {
-                      const { data: existingReservations, error: queryError } = await supabase
-                        .from("reservation")
-                        .select("length")
-                        .eq("drum_id", drum.id);
-
-                      if (queryError) throw queryError;
-
-                      const totalExistingReservations = existingReservations?.reduce((sum, r) => sum + (r.length ?? 0), 0) ?? 0;
-                      const remainingCapacity = drum.initial_length - totalExistingReservations;
-
-                      if (L > remainingCapacity) {
-                        toast.error(
-                          `Insufficient capacity. Total reserved: ${totalExistingReservations}m, Remaining: ${remainingCapacity}m`
-                        );
-                        return;
-                      }
-                    } catch (err) {
-                      toast.error("Failed to check existing reservations");
-                      return;
-                    }
-
-                    addItemFromDrum(Number(selectedDrumId), String(L));
+                    await addItemFromDrum(Number(selectedDrumId), String(L));
                     setInputLength("");
                     setSelectedDrumId("");
                   }}
@@ -473,13 +475,18 @@ export default function ReserveList() {
                           className="w-24"
                         />
                       </div>
-                      <div className="text-sm text-gray-300">
-                        {brands.find((b) => b.id === it.brand)?.brand_name} · {availableTypes.find((t) => t.id === it.type)?.type_name}
+                      <div className=" flex flex-col w-full text-sm text-gray-400">
+                        <div>
+                          {brands.find((b) => String(b.id) === brandFilter)
+                              ?.brand_name
+                          }{" "}
+                          - {types.find((i) => i.id === it.type)?.type_name}
+                        </div>
+                        <div>{it.drum_id}</div>
                       </div>
-                      <div className="text-lg text-white font-semibold">
-                        {it.size} | {it.available}m
+                      <div className="text-lg w-full flex justify-center text-white font-semibold">
+                        {it.size} - {it.available}m
                       </div>
-                      <div className="text-xs text-gray-400">{it.drum_id}</div>
                       <Button
                         variant="destructive"
                         type="button"

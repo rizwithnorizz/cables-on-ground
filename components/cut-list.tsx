@@ -92,7 +92,7 @@ export default function CutList() {
     };
 
     load();
-  }, [supabase]);
+  }, []);
 
   // default filters
   useEffect(() => {
@@ -170,19 +170,21 @@ export default function CutList() {
           if (cableErr) throw cableErr;
           if (cable) {
             const version = nextVersion.current++;
-            newItems.push({
-              id: cable.id,
-              size: cable.size,
-              type: cable.type,
-              drum_id: cable.drum_id,
-              available: cable.curr_length,
-              cutLength: String(res.length),
-              refNo: reservationIdInput,
-              cut_version: version,
-            });
+            setItems((prev) => [
+              ...prev,
+              {
+                id: cable.id,
+                size: cable.size,
+                type: cable.type,
+                drum_id: cable.drum_id,
+                available: cable.curr_length,
+                cutLength: String(res.length),
+                refNo: reservationIdInput,
+                cut_version: version,
+              },
+            ]);
           }
         }
-        setItems(newItems);
         toast.success(`Found ${newItems.length} cable(s) from reservation`);
       } else {
         toast.error("No reservations found with this ID");
@@ -199,7 +201,6 @@ export default function CutList() {
   };
 
   const addItemFromDrum = (id: string, cutLen?: string) => {
-    console.log(id, cutLen);
     if (!id) return;
     const cable = availableCables.find((c) => c.id === id);
     if (!cable) return;
@@ -287,12 +288,12 @@ export default function CutList() {
 
       // delete reservation if one was loaded
       if (reservationIdInput) {
-        const { error: resErr } = await supabase  
+        const { error: resErr } = await supabase
           .from("reservation")
           .select("*")
           .eq("reservation_id", reservationIdInput);
         if (resErr) throw resErr;
-        
+
         for (const it of items) {
           const { error: deleteErr } = await supabase
             .from("reservation")
@@ -452,28 +453,72 @@ export default function CutList() {
                       return;
                     }
 
-                    const enough = candidates.filter(
+                    // Check reservations for each candidate
+                    const candidatesWithReservations = await Promise.all(
+                      candidates.map(async (candidate) => {
+                        const { data: reservations, error } = await supabase
+                          .from("reservation")
+                          .select("length")
+                          .eq("drum_id", candidate.id);
+
+                        if (error) throw error;
+
+                        return {
+                          cable: candidate,
+                          hasReservation: reservations && reservations.length > 0,
+                          reservationLength: reservations?.[0]?.length ?? 0,
+                        };
+                      }),
+                    );
+
+                    // Filter candidates: exclude drums with unmet reservations
+                    const validCandidates = candidatesWithReservations
+                      .filter(({ cable, hasReservation, reservationLength }) => {
+                        // If drum has a reservation, check if available length meets it
+                        if (hasReservation) {
+                          return (cable.curr_length ?? 0) > reservationLength;
+                        }
+                        return true;
+                      })
+                      .map(({ cable }) => cable);
+                    console.log(validCandidates);
+                    if (validCandidates.length === 0) {
+                      toast.error(
+                        "No available drums (all have unmet reservations)",
+                      );
+                      return;
+                    }
+
+                    const enough = validCandidates.filter(
                       (c) => (c.curr_length ?? 0) >= L,
                     );
                     let chosen: DrumCable | null = null;
 
                     if (enough.length > 0) {
+                      // Prefer opened drums (ones that have been partially used)
                       const opened = enough.filter(
                         (c) => (c.initial_length ?? 0) > (c.curr_length ?? 0),
                       );
-                      console.log(opened);
-                      const pool = opened.length > 0 ? opened : enough;
-                      pool.sort(
-                        (a, b) => (a.curr_length ?? 0) - (b.curr_length ?? 0),
-                      );
-                      chosen = pool[0];
+                      
+                      if (opened.length > 0) {
+                        // Sort opened drums by remaining length (pick one with least remaining)
+                        opened.sort(
+                          (a, b) => (a.curr_length ?? 0) - (b.curr_length ?? 0),
+                        );
+                        chosen = opened[0];
+                      } else {
+                        // No opened drums, pick the biggest unopened drum
+                        enough.sort(
+                          (a, b) => (b.curr_length ?? 0) - (a.curr_length ?? 0),
+                        );
+                        chosen = enough[0];
+                      }
                     } else {
                       toast.error(
                         "No single drum has sufficient length to satisfy this cut",
                       );
                       return;
                     }
-
                     addItemFromDrum(chosen.id, String(L));
                   }}
                 >
@@ -557,17 +602,18 @@ export default function CutList() {
                           className="w-24"
                         />
                       </div>
-                      <div className="">
-                        {
-                          brands.find((b) => String(b.id) === brandFilter)
-                            ?.brand_name
-                        }{" "}
-                        - {types.find((i) => i.id === it.type)?.type_name}
+                      <div className=" flex flex-col w-full text-sm text-gray-400">
+                        <div>
+                          {brands.find((b) => String(b.id) === brandFilter)
+                              ?.brand_name
+                          }{" "}
+                          - {types.find((i) => i.id === it.type)?.type_name}
+                        </div>
+                        <div>{it.drum_id}</div>
                       </div>
-                      <div className="text-lg text-white font-semibold">
+                      <div className="text-lg w-full flex justify-center text-white font-semibold">
                         {it.size} - {it.available}m
                       </div>
-                      <div className="text-xs text-gray-400">{it.drum_id}</div>
                       <Button
                         variant="destructive"
                         type="button"

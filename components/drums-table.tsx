@@ -71,7 +71,7 @@ export function DrumsTable() {
     };
 
     loadData();
-  }, [supabase]);
+  }, []);
 
   // Default brand/type filters to first lookup values when available
   useEffect(() => {

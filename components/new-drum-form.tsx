@@ -70,7 +70,7 @@ export default function NewDrumForm() {
     };
 
     loadLookupData();
-  }, [supabase]);
+  }, []);
 
   // Default brand/type filters to first lookup values when available
   useEffect(() => {

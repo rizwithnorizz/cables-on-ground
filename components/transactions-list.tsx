@@ -63,7 +63,7 @@ export default function TransactionsList() {
     };
 
     loadTransactions();
-  }, [supabase]);
+  }, []);
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter((t) => {
