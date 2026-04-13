@@ -205,17 +205,11 @@ export default function TransactionsList() {
                   key={idx}
                   className="bg-[#0b1220] border border-[#1f2937] rounded-lg p-4"
                 >
-                  <div className="grid grid-cols-1 gap-2 md:grid-cols-4 mb-4">
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-3 mb-4">
                     <div>
                       <p className="text-xs text-gray-500 uppercase">Reference</p>
                       <p className="text-sm font-semibold text-white">
                         {group.ref_no || <span className="text-gray-500">—</span>}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase">Cables Cut</p>
-                      <p className="text-sm font-semibold text-white">
-                        {group.totalCables}
                       </p>
                     </div>
                     <div>
