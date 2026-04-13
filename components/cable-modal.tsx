@@ -396,7 +396,7 @@ export default function CableModal({
       );
 
       if (error) throw error;
-      setSmallCables(data ?? []);
+      setSmallCables(uniqueData ?? []);
       setShowSmallCableSelector(true);
     } catch (err) {
       console.error("Failed to load small cables", err);
@@ -826,7 +826,7 @@ export default function CableModal({
                         disabled={loadingSmallCables}
                         className="w-full bg-[#0047FF]/30 text-gray-300 px-3 py-2 rounded text-sm font-medium hover:bg-[#0047FF]/50 disabled:opacity-50 transition"
                       >
-                        {loadingSmallCables ? "Loading..." : "Small cable"}
+                        {loadingSmallCables ? "Loading..." : "Select Test Certificate"}
                       </button>
                     </div>
                   )}
