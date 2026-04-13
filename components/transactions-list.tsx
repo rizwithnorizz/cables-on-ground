@@ -29,6 +29,8 @@ export default function TransactionsList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   useEffect(() => {
     const loadTransactions = async () => {
@@ -51,7 +53,7 @@ export default function TransactionsList() {
             balance_cable,
             ref_no
             `)
-          .order("created_at", { ascending: true });
+          .order("created_at", { ascending: false });
 
         if (error) throw error;
         setTransactions(data as any?? []);
@@ -127,6 +129,17 @@ export default function TransactionsList() {
       );
   }, [filteredTransactions]);
 
+  // Pagination
+  const totalPages = Math.ceil(groupedTransactions.length / itemsPerPage);
+  const startIdx = (currentPage - 1) * itemsPerPage;
+  const endIdx = startIdx + itemsPerPage;
+  const paginatedTransactions = groupedTransactions.slice(startIdx, endIdx);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, fromDate, toDate]);
+
   return (
     <div className="p-8 mx-auto">
       <div className="mb-8">
@@ -185,137 +198,182 @@ export default function TransactionsList() {
         ) : groupedTransactions.length === 0 ? (
           <div className="text-center text-gray-400">No transactions found.</div>
         ) : (
-          <div className="space-y-4">
-            {groupedTransactions.map((group, idx) => (
-              <div
-                key={idx}
-                className="bg-[#0b1220] border border-[#1f2937] rounded-lg p-4"
-              >
-                <div className="grid grid-cols-1 gap-2 md:grid-cols-4 mb-4">
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase">Reference</p>
-                    <p className="text-sm font-semibold text-white">
-                      {group.ref_no || <span className="text-gray-500">—</span>}
-                    </p>
+          <>
+            <div className="space-y-4">
+              {paginatedTransactions.map((group, idx) => (
+                <div
+                  key={idx}
+                  className="bg-[#0b1220] border border-[#1f2937] rounded-lg p-4"
+                >
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-4 mb-4">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase">Reference</p>
+                      <p className="text-sm font-semibold text-white">
+                        {group.ref_no || <span className="text-gray-500">—</span>}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase">Cables Cut</p>
+                      <p className="text-sm font-semibold text-white">
+                        {group.totalCables}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase">Total Length</p>
+                      <p className="text-sm font-semibold text-white">
+                        {group.totalLength.toFixed(2)} m
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase">Date Range</p>
+                      <p className="text-sm font-semibold text-white">
+                        {group.minDate === group.maxDate
+                          ? group.minDate
+                          : `${group.minDate} to ${group.maxDate}`}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase">Cables Cut</p>
-                    <p className="text-sm font-semibold text-white">
-                      {group.totalCables}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase">Total Length</p>
-                    <p className="text-sm font-semibold text-white">
-                      {group.totalLength.toFixed(2)} m
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase">Date Range</p>
-                    <p className="text-sm font-semibold text-white">
-                      {group.minDate === group.maxDate
-                        ? group.minDate
-                        : `${group.minDate} to ${group.maxDate}`}
-                    </p>
+
+                  {/* Transactions Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-[#1f2937]">
+                          <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+                            Drum ID
+                          </th>
+                          <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+                            Brand
+                          </th>
+                          <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+                            Type
+                          </th>
+                          <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+                            Size
+                          </th>
+                          <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+                            Original Length (m)
+                          </th>
+                          <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+                            Length Cut (m)
+                          </th>
+                          <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+                            Balance (m)
+                          </th>
+                          <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+                            Date
+                          </th>
+                          <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+                            Test Certificate
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {group.transactions.map((tx) => (
+                          <tr
+                            key={tx.id}
+                            className="border-b border-[#0b1220] hover:bg-[#111827] transition"
+                          >
+                            <td className="px-2 py-2 text-white">
+                              { tx.drum_id.drum_id ? tx.drum_id.drum_id : <span className="text-gray-500">Unavailable Drum Number</span> }
+                            </td>
+                            <td className="px-2 py-2 text-white">
+                              {tx.drum_id.brand.brand_name}
+                            </td>
+                            <td className="px-2 py-2 text-white">
+                              {tx.drum_id.type.type_name}
+                            </td>
+                            <td className="px-2 py-2 text-white">
+                              {tx.drum_id.size}
+                            </td>
+                            
+                            <td className="px-2 py-2 text-white">
+                              {tx.balance_cable + tx.length_cut} METERS
+                            </td>
+                            <td className="px-2 py-2 text-white">
+                              {tx.length_cut} METERS
+                            </td>
+                            <td className="px-2 py-2 text-white">
+                              {tx.balance_cable} METERS
+                            </td>
+                            <td className="px-2 py-2 text-gray-400">
+                              {new Date(tx.created_at).toLocaleDateString(
+                                undefined,
+                                {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                },
+                              )}
+                            </td>
+                            <td className="px-2 py-2">
+                              {tx.drum_id.testcertificate ? (
+                                <a
+                                  href={tx.drum_id.testcertificate}
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-blue-400 hover:underline"
+                                >
+                                  View Certificate
+                                </a>
+                              ) : (
+                                <span className="text-gray-500">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
+              ))}
+            </div>
 
-                {/* Transactions Table */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-[#1f2937]">
-                        <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
-                          Drum ID
-                        </th>
-                        <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
-                          Brand
-                        </th>
-                        <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
-                          Type
-                        </th>
-                        <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
-                          Size
-                        </th>
-                        <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
-                          Original Length (m)
-                        </th>
-                        <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
-                          Length Cut (m)
-                        </th>
-                        <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
-                          Balance (m)
-                        </th>
-                        <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
-                          Date
-                        </th>
-                        <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
-                          Test Certificate
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {group.transactions.map((tx) => (
-                        <tr
-                          key={tx.id}
-                          className="border-b border-[#0b1220] hover:bg-[#111827] transition"
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-6 border-t border-[#1f2937]">
+                <div className="text-sm text-gray-400">
+                  Showing {startIdx + 1} to {Math.min(endIdx, groupedTransactions.length)} of{" "}
+                  {groupedTransactions.length} transactions
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="secondary"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                      (page) => (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`px-3 py-1 rounded text-sm transition ${
+                            currentPage === page
+                              ? "bg-blue-500 text-white"
+                              : "bg-[#1f2937] text-gray-300 hover:bg-[#2d3748]"
+                          }`}
                         >
-                          <td className="px-2 py-2 text-white">
-                            { tx.drum_id.drum_id ? tx.drum_id.drum_id : <span className="text-gray-500">Unavailable Drum Number</span> }
-                          </td>
-                          <td className="px-2 py-2 text-white">
-                            {tx.drum_id.brand.brand_name}
-                          </td>
-                          <td className="px-2 py-2 text-white">
-                            {tx.drum_id.type.type_name}
-                          </td>
-                          <td className="px-2 py-2 text-white">
-                            {tx.drum_id.size}
-                          </td>
-                          
-                          <td className="px-2 py-2 text-white">
-                            {tx.balance_cable + tx.length_cut} METERS
-                          </td>
-                          <td className="px-2 py-2 text-white">
-                            {tx.length_cut} METERS
-                          </td>
-                          <td className="px-2 py-2 text-white">
-                            {tx.balance_cable} METERS
-                          </td>
-                          <td className="px-2 py-2 text-gray-400">
-                            {new Date(tx.created_at).toLocaleDateString(
-                              undefined,
-                              {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              },
-                            )}
-                          </td>
-                          <td className="px-2 py-2">
-                            {tx.drum_id.testcertificate ? (
-                              <a
-                                href={tx.drum_id.testcertificate}
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-blue-400 hover:underline"
-                              >
-                                View Certificate
-                              </a>
-                            ) : (
-                              <span className="text-gray-500">—</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                          {page}
+                        </button>
+                      )
+                    )}
+                  </div>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </Button>
                 </div>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>
