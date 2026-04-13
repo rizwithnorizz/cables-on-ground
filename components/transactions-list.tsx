@@ -14,6 +14,7 @@ type Transaction = {
     size: string;
     type: { type_name: string };
     brand: { brand_name: string };
+    testcertificate?: string | null;
   };
   length_cut: number;
   balance_cable: number;
@@ -43,7 +44,8 @@ export default function TransactionsList() {
               drum_id,
               size,
               type ( type_name ),
-              brand ( brand_name )
+              brand ( brand_name ),
+              testcertificate
             ),
             length_cut,
             balance_cable,
@@ -236,6 +238,9 @@ export default function TransactionsList() {
                           Size
                         </th>
                         <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+                          Original Length (m)
+                        </th>
+                        <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
                           Length Cut (m)
                         </th>
                         <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
@@ -243,6 +248,9 @@ export default function TransactionsList() {
                         </th>
                         <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
                           Date
+                        </th>
+                        <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+                          Test Certificate
                         </th>
                       </tr>
                     </thead>
@@ -264,6 +272,10 @@ export default function TransactionsList() {
                           <td className="px-2 py-2 text-white">
                             {tx.drum_id.size}
                           </td>
+                          
+                          <td className="px-2 py-2 text-white">
+                            {tx.balance_cable + tx.length_cut} METERSs
+                          </td>
                           <td className="px-2 py-2 text-white">
                             {tx.length_cut} METERS
                           </td>
@@ -280,6 +292,20 @@ export default function TransactionsList() {
                                 hour: "2-digit",
                                 minute: "2-digit",
                               },
+                            )}
+                          </td>
+                          <td className="px-2 py-2">
+                            {tx.drum_id.testcertificate ? (
+                              <a
+                                href={tx.drum_id.testcertificate}
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-400 hover:underline"
+                              >
+                                View Certificate
+                              </a>
+                            ) : (
+                              <span className="text-gray-500">—</span>
                             )}
                           </td>
                         </tr>

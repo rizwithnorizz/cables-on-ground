@@ -34,6 +34,16 @@ type DrumCable = {
   testcertificate?: string | null;
 };
 
+type BrandOption = {
+  id: number | string;
+  brand_name: string;
+};
+
+type TypeOption = {
+  id: number | string;
+  type_name: string;
+};
+
 export default function CableModal({
   cable,
   onClose,
@@ -63,6 +73,15 @@ export default function CableModal({
   const [isDraggingCert, setIsDraggingCert] = useState(false);
   const [isRemovingCert, setIsRemovingCert] = useState(false);
   const [selectedCertFile, setSelectedCertFile] = useState<File | null>(null);
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
+  const [editedDrumId, setEditedDrumId] = useState<string>(cable?.drum_id ?? "");
+  const [editedBrand, setEditedBrand] = useState<number | string>(cable?.brand ?? "");
+  const [editedType, setEditedType] = useState<number | string>(cable?.type ?? "");
+  const [editedSize, setEditedSize] = useState<string>(cable?.size ?? "");
+  const [brands, setBrands] = useState<BrandOption[]>([]);
+  const [types, setTypes] = useState<TypeOption[]>([]);
+  const [loadingBrandTypes, setLoadingBrandTypes] = useState(false);
+  const [isSavingDetails, setIsSavingDetails] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -78,7 +97,12 @@ export default function CableModal({
     if (cable) {
       setEditedCurrLength(cable.curr_length);
       setEditedInitialLength(cable.initial_length);
+      setEditedDrumId(cable.drum_id);
+      setEditedBrand(cable.brand);
+      setEditedType(cable.type);
+      setEditedSize(cable.size);
       setIsEditing(false);
+      setIsEditingDetails(false);
     }
   }, [cable?.id]);
 
@@ -140,6 +164,30 @@ export default function CableModal({
       mounted = false;
     };
   }, [cable, supabase]);
+
+  useEffect(() => {
+    const loadBrandTypes = async () => {
+      setLoadingBrandTypes(true);
+      try {
+        const [{ data: brandData, error: brandError }, { data: typeData, error: typeError }] = await Promise.all([
+          supabase.from("brand").select("id, brand_name"),
+          supabase.from("type").select("id, type_name"),
+        ]);
+
+        if (brandError) throw brandError;
+        if (typeError) throw typeError;
+
+        setBrands(brandData ?? []);
+        setTypes(typeData ?? []);
+      } catch (err) {
+        console.error("Failed to load brands and types", err);
+      } finally {
+        setLoadingBrandTypes(false);
+      }
+    };
+
+    loadBrandTypes();
+  }, [supabase]);
 
   if (!cable) return null;
 
@@ -269,6 +317,47 @@ export default function CableModal({
       setEditedInitialLength(cable.initial_length);
     }
     setIsEditing(false);
+  };
+
+  const handleSaveDetails = async () => {
+    if (!cable) return;
+    setIsSavingDetails(true);
+    try {
+      const { error } = await supabase
+        .from("drum_cables")
+        .update({
+          drum_id: editedDrumId,
+          brand: editedBrand,
+          type: editedType,
+          size: editedSize,
+        })
+        .eq("id", cable.id);
+
+      if (error) throw error;
+
+      // Update local state
+      cable.drum_id = editedDrumId;
+      cable.brand = editedBrand;
+      cable.type = editedType;
+      cable.size = editedSize;
+      setIsEditingDetails(false);
+      router.refresh();
+    } catch (err) {
+      console.error("Failed to save details", err);
+      alert(err instanceof Error ? err.message : "Failed to save details");
+    } finally {
+      setIsSavingDetails(false);
+    }
+  };
+
+  const handleCancelEditDetails = () => {
+    if (cable) {
+      setEditedDrumId(cable.drum_id);
+      setEditedBrand(cable.brand);
+      setEditedType(cable.type);
+      setEditedSize(cable.size);
+    }
+    setIsEditingDetails(false);
   };
 
   const handleDeleteCable = async () => {
@@ -411,30 +500,116 @@ export default function CableModal({
             </div>
 
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-[#1a1f3a] p-3 rounded-lg border border-[#0047FF]/10 text-sm">
-                  <div className="text-xs text-gray-400"># Drum No.</div>
-                  <div className="font-medium text-gray-100">
-                    {cable.drum_id}
+              {isEditingDetails ? (
+                <div className="space-y-3 bg-[#1a1f3a] p-4 rounded-lg border border-[#0047FF]/10">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="text-sm">
+                      <label className="text-xs text-gray-400 block mb-1"># Drum No.</label>
+                      <input
+                        type="text"
+                        value={editedDrumId}
+                        onChange={(e) => setEditedDrumId(e.target.value)}
+                        className="w-full bg-[#0b1220] text-gray-100 border border-[#0047FF]/30 rounded px-2 py-1 text-sm"
+                      />
+                    </div>
+                    <div className="text-sm">
+                      <label className="text-xs text-gray-400 block mb-1">Brand</label>
+                      <select
+                        value={editedBrand}
+                        onChange={(e) => setEditedBrand(e.target.value ? (isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value)) : "")}
+                        disabled={loadingBrandTypes}
+                        className="w-full bg-[#0b1220] text-gray-100 border border-[#0047FF]/30 rounded px-2 py-1 text-sm disabled:opacity-50"
+                      >
+                        <option value="">Select brand</option>
+                        {brands.map((brand) => (
+                          <option key={brand.id} value={brand.id}>
+                            {brand.brand_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="text-sm">
+                      <label className="text-xs text-gray-400 block mb-1">Cable Type</label>
+                      <select
+                        value={editedType}
+                        onChange={(e) => setEditedType(e.target.value ? (isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value)) : "")}
+                        disabled={loadingBrandTypes}
+                        className="w-full bg-[#0b1220] text-gray-100 border border-[#0047FF]/30 rounded px-2 py-1 text-sm disabled:opacity-50"
+                      >
+                        <option value="">Select type</option>
+                        {types.map((type) => (
+                          <option key={type.id} value={type.id}>
+                            {type.type_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="text-sm">
+                      <label className="text-xs text-gray-400 block mb-1">Size</label>
+                      <input
+                        type="text"
+                        value={editedSize}
+                        onChange={(e) => setEditedSize(e.target.value)}
+                        className="w-full bg-[#0b1220] text-gray-100 border border-[#0047FF]/30 rounded px-2 py-1 text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      onClick={handleSaveDetails}
+                      disabled={isSavingDetails}
+                      className="flex-1 bg-[#0047FF] text-white px-3 py-2 rounded text-sm font-medium hover:bg-[#0047FF]/80 disabled:opacity-50"
+                    >
+                      {isSavingDetails ? "Saving..." : "Save"}
+                    </button>
+                    <button
+                      onClick={handleCancelEditDetails}
+                      disabled={isSavingDetails}
+                      className="flex-1 bg-[#0047FF]/20 text-gray-300 px-3 py-2 rounded text-sm font-medium hover:bg-[#0047FF]/30 disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
                   </div>
                 </div>
-                <div className="bg-[#1a1f3a] p-3 rounded-lg border border-[#0047FF]/10 text-sm">
-                  <div className="text-xs text-gray-400">Brand</div>
-                  <div className="font-medium text-gray-100">
-                    {brandName ?? "-"}
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold text-gray-200">Cable Details</h4>
+                    {user && (
+                      <button
+                        onClick={() => setIsEditingDetails(true)}
+                        className="text-xs text-[#00C8FF] hover:underline"
+                      >
+                        Edit
+                      </button>
+                    )}
                   </div>
-                </div>
-                <div className="bg-[#1a1f3a] p-3 rounded-lg border border-[#0047FF]/10 text-sm">
-                  <div className="text-xs text-gray-400">Cable Type</div>
-                  <div className="font-medium text-gray-100">
-                    {typeName ?? "-"}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-[#1a1f3a] p-3 rounded-lg border border-[#0047FF]/10 text-sm">
+                      <div className="text-xs text-gray-400"># Drum No.</div>
+                      <div className="font-medium text-gray-100">
+                        {cable.drum_id}
+                      </div>
+                    </div>
+                    <div className="bg-[#1a1f3a] p-3 rounded-lg border border-[#0047FF]/10 text-sm">
+                      <div className="text-xs text-gray-400">Brand</div>
+                      <div className="font-medium text-gray-100">
+                        {brandName ?? "-"}
+                      </div>
+                    </div>
+                    <div className="bg-[#1a1f3a] p-3 rounded-lg border border-[#0047FF]/10 text-sm">
+                      <div className="text-xs text-gray-400">Cable Type</div>
+                      <div className="font-medium text-gray-100">
+                        {typeName ?? "-"}
+                      </div>
+                    </div>
+                    <div className="bg-[#1a1f3a] p-3 rounded-lg border border-[#0047FF]/10 text-sm">
+                      <div className="text-xs text-gray-400">Size</div>
+                      <div className="font-medium text-gray-100">{cable.size}</div>
+                    </div>
                   </div>
-                </div>
-                <div className="bg-[#1a1f3a] p-3 rounded-lg border border-[#0047FF]/10 text-sm">
-                  <div className="text-xs text-gray-400">Size</div>
-                  <div className="font-medium text-gray-100">{cable.size}</div>
-                </div>
-              </div>
+                </>
+              )}
 
               <div className="bg-[#1a1f3a] p-3 rounded-lg border border-[#0047FF]/10 text-sm">
                 <div className="text-xs text-gray-400">Test Certificate</div>
