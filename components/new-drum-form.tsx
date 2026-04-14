@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
+import { CertificateDragDrop } from "@/components/CertificateDragDrop";
 
 type CableType = {
   id: number;
@@ -36,7 +37,6 @@ export default function NewDrumForm() {
   const [currLength, setCurrLength] = useState("");
   const [initialLength, setInitialLength] = useState("");
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
-  const [isDragOver, setIsDragOver] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -102,44 +102,6 @@ export default function NewDrumForm() {
     });
     return Array.from(setS).sort();
   }, [drumSizes, brandId, typeId]);
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      const file = files[0];
-      if (file.type === "application/pdf" || file.type.startsWith("image/")) {
-        setCertificateFile(file);
-      } else {
-        toast.error("Please drop a PDF or image file.");
-      }
-    }
-  };
-
-  const handleCertificateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setCertificateFile(e.target.files[0]);
-    }
-  };
-
-  const handleRemoveCertificate = () => {
-    setCertificateFile(null);
-  };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -321,50 +283,10 @@ export default function NewDrumForm() {
 
         </div>
 
-        <label className="space-y-2 text-sm text-gray-300">
-          Certificate (optional)
-          <div
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            className={`relative w-full rounded-md border-2 border-dashed px-3 py-6 text-center transition-colors ${
-              isDragOver
-          ? "border-blue-400 bg-blue-500/10"
-          : "border-input bg-transparent hover:border-blue-400"
-            }`}
-          >
-            <input
-              type="file"
-              accept="application/pdf,image/*"
-              onChange={handleCertificateChange}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              style={{ pointerEvents: certificateFile ? "none" : "auto" }}
-            />
-            {certificateFile ? (
-              <div className="space-y-2">
-          <div className="text-sm text-gray-300">
-            Selected: {certificateFile.name}
-          </div>
-          <button
-            type="button"
-            onClick={handleRemoveCertificate}
-            className="text-xs text-red-400 hover:text-red-300 relative z-10"
-          >
-            Remove file
-          </button>
-              </div>
-            ) : (
-              <div className="space-y-1 pointer-events-none">
-          <p className="text-gray-400">
-            Drag and drop your certificate here or click to browse
-          </p>
-          <p className="text-xs text-gray-500">
-            Accepted formats: PDF, PNG, JPG, GIF
-          </p>
-              </div>
-            )}
-          </div>
-        </label>
+        <CertificateDragDrop
+          certificateFile={certificateFile}
+          onFileChange={setCertificateFile}
+        />
 
 
         <div className="flex items-center justify-between gap-4 pt-2">

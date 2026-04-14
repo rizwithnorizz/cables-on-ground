@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase/client";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { CutFilters, CutListPanel } from "./cutting";
+
 
 type DrumCable = {
   id: string;
@@ -322,316 +322,150 @@ export default function CutList() {
         {/* Notifications are shown via react-hot-toast */}
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 mb-5">
-              <label className="space-y-2 text-sm text-gray-300">
-                Brand
-                <select
-                  value={brandFilter}
-                  onChange={(e) => {
-                    setBrandFilter(e.target.value);
-                    setTypeFilter("");
-                    setSizeFilter("");
-                  }}
-                  className="w-full rounded-md border border-input bg-[#0b1220] px-3 py-2 text-base text-white"
-                >
-                  {brands.map((b) => (
-                    <option
-                      key={b.id}
-                      value={String(b.id)}
-                      className="bg-[#0b1220] text-white"
-                    >
-                      {b.brand_name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+          <CutFilters
+            brands={brands}
+            types={types}
+            availableSizes={availableSizes}
+            brandFilter={brandFilter}
+            typeFilter={typeFilter}
+            sizeFilter={sizeFilter}
+            inputLength={inputLength}
+            onBrandChange={(value) => {
+              setBrandFilter(value);
+              setTypeFilter("");
+              setSizeFilter("");
+            }}
+            onTypeChange={(value) => {
+              setTypeFilter(value);
+              setSizeFilter("");
+            }}
+            onSizeChange={setSizeFilter}
+            onLengthChange={setInputLength}
+            onAddClick={async () => {
+              const L = Number(inputLength);
+              if (!inputLength || Number.isNaN(L) || L <= 0) {
+                toast.error("Enter a valid cut length");
+                return;
+              }
+              if (!brandFilter || !typeFilter || !sizeFilter) {
+                toast.error("Select brand, type and size");
+                return;
+              }
 
-              <label className="space-y-2 text-sm text-gray-300">
-                Type
-                <select
-                  value={typeFilter}
-                  onChange={(e) => {
-                    setTypeFilter(e.target.value);
-                    setSizeFilter("");
-                  }}
-                  className="w-full rounded-md border border-input bg-[#0b1220] px-3 py-2 text-base text-white"
-                >
-                  <option value="">Select type</option>
-                  {types.map((t) => (
-                    <option
-                      key={t.id}
-                      value={String(t.id)}
-                      className="bg-[#0b1220] text-white"
-                    >
-                      {t.type_name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+              const candidates = availableCables.filter(
+                (c) =>
+                  String(c.brand) === String(brandFilter) &&
+                  String(c.type) === String(typeFilter) &&
+                  c.size === sizeFilter &&
+                  (c.curr_length ?? 0) > 0,
+              );
+              if (candidates.length === 0) {
+                toast.error(
+                  "No available drums for selected brand/type/size",
+                );
+                return;
+              }
 
-            <label className="space-y-2 text-sm text-gray-300">
-              Size
-              <div className="mt-2 grid grid-cols-4 gap-2">
-                {availableSizes.length === 0 ? (
-                  <div className="text-sm text-gray-500">
-                    No sizes available
-                  </div>
-                ) : (
-                  availableSizes
-                    .sort((a, b) => {
-                      const [numA1, numA2] = a.split("x").map(Number);
-                      const [numB1, numB2] = b.split("x").map(Number);
-                      return numA1 !== numB1 ? numA1 - numB1 : numA2 - numB2;
-                    })
-                    .map((s) => (
-                      <button
-                        key={s}
-                        onClick={() => setSizeFilter(s)}
-                        className={`px-3 py-3 rounded ${sizeFilter === s ? "bg-emerald-500 text-white" : "bg-[#1b263b] text-gray-300"}`}
-                      >
-                        {s}
-                      </button>
-                    ))
-                )}
-              </div>
-            </label>
+              // Check reservations for each candidate
+              const candidatesWithReservations = await Promise.all(
+                candidates.map(async (candidate) => {
+                  const { data: reservations, error } = await supabase
+                    .from("reservation")
+                    .select("length")
+                    .eq("drum_id", candidate.id);
 
-            <div className="mb-4">
-              <label className="space-y-2 text-sm text-gray-300">
-                Length to cut (m)
-                <Input
-                  type="number"
-                  placeholder="Length to cut"
-                  value={inputLength}
-                  onChange={(e) => setInputLength(e.target.value)}
-                />
-              </label>
-              <div className="mt-3 flex gap-2">
-                <Button
-                  type="button"
-                  onClick={async () => {
-                    const L = Number(inputLength);
-                    if (!inputLength || Number.isNaN(L) || L <= 0) {
-                      toast.error("Enter a valid cut length");
-                      return;
-                    }
-                    if (!brandFilter || !typeFilter || !sizeFilter) {
-                      toast.error("Select brand, type and size");
-                      return;
-                    }
+                  if (error) throw error;
+                  return {
+                    cable: candidate,
+                    hasReservation: reservations && reservations.length > 0,
+                    reservationLength: reservations?.[0]?.length ?? 0,
+                  };
+                }),
+              );
 
-                    const candidates = availableCables.filter(
-                      (c) =>
-                        String(c.brand) === String(brandFilter) &&
-                        String(c.type) === String(typeFilter) &&
-                        c.size === sizeFilter &&
-                        (c.curr_length ?? 0) > 0,
-                    );
-                    if (candidates.length === 0) {
-                      toast.error(
-                        "No available drums for selected brand/type/size",
-                      );
-                      return;
-                    }
+              // Filter candidates: exclude drums with unmet reservations
+              const validCandidates = candidatesWithReservations
+                .filter(({ cable, hasReservation, reservationLength }) => {
+                  // If drum has a reservation, check if available length meets it
+                  if (hasReservation) {
+                    return (cable.curr_length ?? 0) > reservationLength;
+                  }
+                  return true;
+                })
+                .map(({ cable }) => cable);
+              console.log(validCandidates);
+              if (validCandidates.length === 0) {
+                toast.error(
+                  "No available drums (all have unmet reservations)",
+                );
+                return;
+              }
 
-                    // Check reservations for each candidate
-                    const candidatesWithReservations = await Promise.all(
-                      candidates.map(async (candidate) => {
-                        const { data: reservations, error } = await supabase
-                          .from("reservation")
-                          .select("length")
-                          .eq("drum_id", candidate.id);
+              const enough = validCandidates.filter(
+                (c) => (c.curr_length ?? 0) >= L,
+              );
+              let chosen: DrumCable | null = null;
 
-                        if (error) throw error;
-                        return {
-                          cable: candidate,
-                          hasReservation: reservations && reservations.length > 0,
-                          reservationLength: reservations?.[0]?.length ?? 0,
-                        };
-                      }),
-                    );
+              if (enough.length > 0) {
+                // Prefer opened drums (ones that have been partially used)
+                const opened = enough.filter(
+                  (c) => (c.initial_length ?? 0) > (c.curr_length ?? 0),
+                );
+                
+                if (opened.length > 0) {
+                  // Sort opened drums by remaining length (pick one with least remaining)
+                  opened.sort(
+                    (a, b) => (a.curr_length ?? 0) - (b.curr_length ?? 0),
+                  );
+                  chosen = opened[0];
+                } else {
+                  // No opened drums, pick the biggest unopened drum
+                  enough.sort(
+                    (a, b) => (b.curr_length ?? 0) - (a.curr_length ?? 0),
+                  );
+                  chosen = enough[0];
+                }
+              } else {
+                toast.error(
+                  "No single drum has sufficient length to satisfy this cut",
+                );
+                return;
+              }
+              addItemFromDrum(chosen.id, String(L));
+            }}
+            onResetClick={() => {
+              setInputLength("");
+              setBrandFilter(brands[0]?.id ? String(brands[0].id) : "");
+              setTypeFilter(types[0]?.id ? String(types[0].id) : "");
+              setSizeFilter("");
+            }}
+          />
 
-                    // Filter candidates: exclude drums with unmet reservations
-                    const validCandidates = candidatesWithReservations
-                      .filter(({ cable, hasReservation, reservationLength }) => {
-                        // If drum has a reservation, check if available length meets it
-                        if (hasReservation) {
-                          return (cable.curr_length ?? 0) > reservationLength;
-                        }
-                        return true;
-                      })
-                      .map(({ cable }) => cable);
-                    console.log(validCandidates);
-                    if (validCandidates.length === 0) {
-                      toast.error(
-                        "No available drums (all have unmet reservations)",
-                      );
-                      return;
-                    }
-
-                    const enough = validCandidates.filter(
-                      (c) => (c.curr_length ?? 0) >= L,
-                    );
-                    let chosen: DrumCable | null = null;
-
-                    if (enough.length > 0) {
-                      // Prefer opened drums (ones that have been partially used)
-                      const opened = enough.filter(
-                        (c) => (c.initial_length ?? 0) > (c.curr_length ?? 0),
-                      );
-                      
-                      if (opened.length > 0) {
-                        // Sort opened drums by remaining length (pick one with least remaining)
-                        opened.sort(
-                          (a, b) => (a.curr_length ?? 0) - (b.curr_length ?? 0),
-                        );
-                        chosen = opened[0];
-                      } else {
-                        // No opened drums, pick the biggest unopened drum
-                        enough.sort(
-                          (a, b) => (b.curr_length ?? 0) - (a.curr_length ?? 0),
-                        );
-                        chosen = enough[0];
-                      }
-                    } else {
-                      toast.error(
-                        "No single drum has sufficient length to satisfy this cut",
-                      );
-                      return;
-                    }
-                    addItemFromDrum(chosen.id, String(L));
-                  }}
-                >
-                  Add
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setInputLength("");
-                    setBrandFilter(brands[0]?.id ? String(brands[0].id) : "");
-                    setTypeFilter(types[0]?.id ? String(types[0].id) : "");
-                    setSizeFilter("");
-                  }}
-                >
-                  Reset
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div className="bg-[#071025] border border-[#0b1220] rounded-md p-4">
-              <h3 className="text-sm font-semibold text-white mb-2">
-                Cut List
-              </h3>
-              <div className="mb-3 p-2 bg-[#0047FF]/10 border border-[#0047FF]/30 rounded text-sm text-gray-300">
-                <label className="space-y-2 text-sm text-gray-300 mb-3 w-full">
-                  Enter Reservation ID
-                  <div className="flex gap-2">
-                    <Input
-                      className="flex-1"
-                      placeholder="Reservation ID"
-                      value={reservationIdInput}
-                      onChange={(e) => setReservationIdInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          handleFindReservation();
-                        }
-                      }}
-                    />
-                    <Button
-                      onClick={handleFindReservation}
-                      disabled={isLoadingReservation}
-                      className="px-4"
-                    >
-                      {isLoadingReservation ? "Finding…" : "Find"}
-                    </Button>
-                  </div>
-                </label>
-              </div>
-              <label className="space-y-2 text-sm text-gray-300 mb-3">
-                Reference
-                <Input
-                  className="mb-3"
-                  placeholder="Reference/Description"
-                  value={transactionRef}
-                  onChange={(e) => setTransactionRef(e.target.value)}
-                />
-              </label>
-              {items.length === 0 ? (
-                <div className="text-sm text-gray-400 mb-4">
-                  No cables added yet.
-                </div>
-              ) : (
-                <div className="space-y-3 mb-4 max-h-[380px] overflow-auto">
-                  {items.map((it) => (
-                    <div
-                      key={it.cut_version}
-                      className="flex items-center gap-3 bg-[#0b1220] p-3 rounded"
-                    >
-                      <div className="flex-1">
-                        <Input
-                          type="number"
-                          placeholder="Length"
-                          value={it.cutLength}
-                          onChange={(e) =>
-                            updateItem(it.cut_version, {
-                              cutLength: e.target.value,
-                            })
-                          }
-                          className="w-24"
-                        />
-                      </div>
-                      <div className=" flex flex-col w-full text-sm text-gray-400">
-                        <div>
-                          {brands.find((b) => String(b.id) === brandFilter)
-                              ?.brand_name
-                          }{" "}
-                          - {types.find((i) => i.id === it.type)?.type_name}
-                        </div>
-                        <div>{it.drum_id}</div>
-                      </div>
-                      <div className="text-lg w-full flex justify-center text-white font-semibold">
-                        {it.size} - {it.available}m
-                      </div>
-                      <Button
-                        variant="destructive"
-                        type="button"
-                        onClick={() => removeItem(it.cut_version)}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <Button
-                  onClick={submitCuts}
-                  disabled={submitting || items.length === 0}
-                  className="flex-1"
-                >
-                  {submitting ? "Submitting…" : "Submit Cuts"}
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setItems([]);
-                    setSizeFilter("");
-                    setTypeFilter("");
-                    setBrandFilter(brands[0]?.id ? String(brands[0].id) : "");
-                    setTransactionRef("");
-                    setReservationIdInput("");
-                  }}
-                >
-                  Clear
-                </Button>
-              </div>
-            </div>
-          </div>
+          <CutListPanel
+            items={items}
+            transactionRef={transactionRef}
+            reservationIdInput={reservationIdInput}
+            isLoadingReservation={isLoadingReservation}
+            brands={brands}
+            types={types}
+            submitting={submitting}
+            onReservationIdChange={setReservationIdInput}
+            onFindReservation={handleFindReservation}
+            onTransactionRefChange={setTransactionRef}
+            onLengthChange={(cutVersion, value) =>
+              updateItem(cutVersion, { cutLength: value })
+            }
+            onRemoveItem={removeItem}
+            onSubmit={submitCuts}
+            onClear={() => {
+              setItems([]);
+              setSizeFilter("");
+              setTypeFilter("");
+              setBrandFilter(brands[0]?.id ? String(brands[0].id) : "");
+              setTransactionRef("");
+              setReservationIdInput("");
+            }}
+          />
         </div>
       </div>
     </div>

@@ -2,11 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Edit, Download } from "lucide-react";
 import JSZip from "jszip";
 import { toast } from "react-hot-toast";
+import {
+  TransactionFilters,
+  TransactionGroupCard,
+  PaginationControls,
+} from "./transactions";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { saveAs } = require("file-saver");
@@ -325,46 +328,19 @@ export default function TransactionsList() {
 
       <div className="space-y-6 bg-[#111827]/80 border border-[#0047FF]/30 rounded-3xl p-8 shadow-lg shadow-[#0047FF]/10">
         {/* Filters */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <label className="space-y-2 text-sm text-gray-300">
-            Search (Ref or Drum ID)
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search..."
-            />
-          </label>
-          <label className="space-y-2 text-sm text-gray-300">
-            From Date
-            <Input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-            />
-          </label>
-          <label className="space-y-2 text-sm text-gray-300">
-            To Date
-            <Input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-            />
-          </label>
-        </div>
-
-        {/* Clear Filters */}
-        <div className="flex gap-2">
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setSearchQuery("");
-              setFromDate("");
-              setToDate("");
-            }}
-          >
-            Clear Filters
-          </Button>
-        </div>
+        <TransactionFilters
+          searchQuery={searchQuery}
+          fromDate={fromDate}
+          toDate={toDate}
+          onSearchChange={setSearchQuery}
+          onFromDateChange={setFromDate}
+          onToDateChange={setToDate}
+          onClearFilters={() => {
+            setSearchQuery("");
+            setFromDate("");
+            setToDate("");
+          }}
+        />
 
         {/* Results */}
         {loading ? (
@@ -379,244 +355,37 @@ export default function TransactionsList() {
           <>
             <div className="space-y-4">
               {paginatedTransactions.map((group, idx) => (
-                <div
+                <TransactionGroupCard
                   key={idx}
-                  className="bg-[#0b1220] border border-[#1f2937] rounded-lg p-4"
-                >
-                  <div className="grid grid-cols-1 gap-2 md:grid-cols-4 mb-4">
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase">
-                        Reference
-                      </p>
-                      {editingGroupIdx === idx ? (
-                        <div className="flex gap-2 mt-2">
-                          <Input
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            placeholder="Enter reference number"
-                            className="text-sm"
-                          />
-                          <Button
-                            onClick={() => handleSave(group.ref_no, idx)}
-                            disabled={isSaving}
-                            variant="default"
-                            className="text-xs whitespace-nowrap"
-                          >
-                            {isSaving ? "Saving..." : "Save"}
-                          </Button>
-                          <Button
-                            onClick={handleCancel}
-                            disabled={isSaving}
-                            variant="secondary"
-                            className="text-xs whitespace-nowrap"
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between gap-2 mt-2">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => handleEditClick(group.ref_no, idx)}
-                              className="pr-2 hover:text-blue-400 transition"
-                              title="Edit reference number"
-                            >
-                              <Edit size={14} />
-                            </button>
-                            <p className="text-sm font-semibold text-white">
-                              {group.ref_no || (
-                                <span className="text-gray-500">—</span>
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase">
-                        Total Length
-                      </p>
-                      <p className="text-sm font-semibold text-white">
-                        {group.totalLength.toFixed(2)} m
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase">
-                        Date Range
-                      </p>
-                      <p className="text-sm font-semibold text-white">
-                        {group.minDate === group.maxDate
-                          ? group.minDate
-                          : `${group.minDate} to ${group.maxDate}`}
-                      </p>
-                    </div>
-                    <div className="flex items-center justify-end">
-                           {group.transactions.some(
-                      (tx) => tx.drum_id.testcertificate,
-                    ) && (
-                      <button
-                        onClick={() => handleDownloadCertificates(group, idx)}
-                        disabled={downloadingGroupIdx === idx}
-                        className="flex items-center justify-center gap-1 px-2 w-1/2 py-1 rounded text-xs bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition"
-                        title="Download all certificates as zip"
-                      >
-                        <Download size={12} />
-                        {downloadingGroupIdx === idx
-                          ? "Downloading..."
-                          : "Download all"}
-                      </button>
-                    )}
-                    </div>
-                  </div>
-
-                  {/* Transactions Table */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-[#1f2937]">
-                          <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
-                            Drum ID
-                          </th>
-                          <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
-                            Brand
-                          </th>
-                          <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
-                            Type
-                          </th>
-                          <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
-                            Size
-                          </th>
-                          <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
-                            Original Length (m)
-                          </th>
-                          <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
-                            Length Cut (m)
-                          </th>
-                          <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
-                            Balance (m)
-                          </th>
-                          <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
-                            Date
-                          </th>
-                          <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
-                            Test Certificate
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {group.transactions.map((tx) => (
-                          <tr
-                            key={tx.id}
-                            className="border-b border-[#0b1220] hover:bg-[#111827] transition"
-                          >
-                            <td className="px-2 py-2 text-white">
-                              {tx.drum_id.drum_id ? (
-                                tx.drum_id.drum_id
-                              ) : (
-                                <span className="text-gray-500">
-                                  Unavailable Drum Number
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-2 py-2 text-white">
-                              {tx.drum_id.brand.brand_name}
-                            </td>
-                            <td className="px-2 py-2 text-white">
-                              {tx.drum_id.type.type_name}
-                            </td>
-                            <td className="px-2 py-2 text-white">
-                              {tx.drum_id.size}
-                            </td>
-
-                            <td className="px-2 py-2 text-white">
-                              {tx.balance_cable + tx.length_cut} METERS
-                            </td>
-                            <td className="px-2 py-2 text-white">
-                              {tx.length_cut} METERS
-                            </td>
-                            <td className="px-2 py-2 text-white">
-                              {tx.balance_cable} METERS
-                            </td>
-                            <td className="px-2 py-2 text-gray-400">
-                              {new Date(tx.created_at).toLocaleDateString(
-                                undefined,
-                                {
-                                  year: "numeric",
-                                  month: "short",
-                                  day: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                },
-                              )}
-                            </td>
-                            <td className="px-2 py-2">
-                              {tx.drum_id.testcertificate ? (
-                                <a
-                                  href={tx.drum_id.testcertificate}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-400 hover:underline"
-                                >
-                                  View Certificate
-                                </a>
-                              ) : (
-                                <span className="text-gray-500">—</span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                  group={group}
+                  idx={idx}
+                  isEditing={editingGroupIdx === idx}
+                  editValue={editValue}
+                  isSaving={isSaving}
+                  isDownloading={downloadingGroupIdx === idx}
+                  onEditClick={handleEditClick}
+                  onCancel={handleCancel}
+                  onSave={handleSave}
+                  onEditValueChange={setEditValue}
+                  onDownload={handleDownloadCertificates}
+                  hasDownloadableContent={group.transactions.some(
+                    (tx) => tx.drum_id.testcertificate,
+                  )}
+                />
               ))}
             </div>
 
             {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between pt-6 border-t border-[#1f2937]">
-                <div className="text-sm text-gray-400">
-                  Showing {startIdx + 1} to{" "}
-                  {Math.min(endIdx, groupedTransactions.length)} of{" "}
-                  {groupedTransactions.length} transactions
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="secondary"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    Previous
-                  </Button>
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                      (page) => (
-                        <button
-                          key={page}
-                          onClick={() => setCurrentPage(page)}
-                          className={`px-3 py-1 rounded text-sm transition ${
-                            currentPage === page
-                              ? "bg-blue-500 text-white"
-                              : "bg-[#1f2937] text-gray-300 hover:bg-[#2d3748]"
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      ),
-                    )}
-                  </div>
-                  <Button
-                    variant="secondary"
-                    onClick={() =>
-                      setCurrentPage((p) => Math.min(totalPages, p + 1))
-                    }
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            )}
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              startIdx={startIdx}
+              endIdx={endIdx}
+              totalItems={groupedTransactions.length}
+              onPrevious={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              onNext={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              onPageChange={setCurrentPage}
+            />
           </>
         )}
       </div>

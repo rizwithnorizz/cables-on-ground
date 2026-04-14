@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from 'react-hot-toast';
 import { createClient } from "@/lib/supabase/client";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { ReserveFilters, ReserveListPanel } from "./reservations";
+
 
 type DrumCable = {
   id: number;
@@ -271,252 +271,84 @@ export default function ReserveList() {
         {/* Notifications are shown via react-hot-toast */}
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 mb-5">
-              <label className="space-y-2 text-sm text-gray-300">
-                Brand
-                <select
-                  value={brandFilter}
-                  onChange={(e) => {
-                    setBrandFilter(e.target.value);
-                    setTypeFilter("");
-                    setSizeFilter("");
-                  }}
-                  className="w-full rounded-md border border-input bg-[#0b1220] px-3 py-2 text-base text-white"
-                >
-                  {brands.map((b) => (
-                    <option
-                      key={b.id}
-                      value={String(b.id)}
-                      className="bg-[#0b1220] text-white"
-                    >
-                      {b.brand_name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+          <ReserveFilters
+            brands={brands}
+            types={types}
+            availableSizes={availableSizes}
+            availableCables={drumsMatchingFilters}
+            brandFilter={brandFilter}
+            typeFilter={typeFilter}
+            sizeFilter={sizeFilter}
+            inputLength={inputLength}
+            onBrandChange={(value) => {
+              setBrandFilter(value);
+              setTypeFilter("");
+              setSizeFilter("");
+            }}
+            onTypeChange={(value) => {
+              setTypeFilter(value);
+              setSizeFilter("");
+            }}
+            onSizeChange={setSizeFilter}
+            onLengthChange={setInputLength}
+            onAddClick={async () => {
+              const L = Number(inputLength);
+              if (!inputLength || Number.isNaN(L) || L <= 0) {
+                toast.error("Enter a valid reserve length");
+                return;
+              }
+              if (!selectedDrumId) {
+                toast.error("Select a drum");
+                return;
+              }
+              
+              const drum = availableCables.find((c) => c.id === Number(selectedDrumId));
+              if (!drum) {
+                toast.error("Selected drum not found");
+                return;
+              }
 
-              <label className="space-y-2 text-sm text-gray-300">
-                Type
-                <select
-                  value={typeFilter}
-                  onChange={(e) => {
-                    setTypeFilter(e.target.value);
-                    setSizeFilter("");
-                  }}
-                  className="w-full rounded-md border border-input bg-[#0b1220] px-3 py-2 text-base text-white"
-                >
-                  <option value="">Select type</option>
-                  {types.map((t) => (
-                    <option
-                      key={t.id}
-                      value={String(t.id)}
-                      className="bg-[#0b1220] text-white"
-                    >
-                      {t.type_name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+              if (L > (drum.curr_length ?? 0)) {
+                toast.error(`Reserve length exceeds available length on this drum (${drum.curr_length}m)`);
+                return;
+              }
 
-            <label className="space-y-2 text-sm text-gray-300">
-              Size
-              <div className="mt-2 grid grid-cols-4 gap-2">
-              {availableSizes.length === 0 ? (
-                <div className="text-sm text-gray-500">No sizes available</div>
-              ) : (
-                availableSizes
-                .sort((a, b) => {
-                  const [aPrefix, aPostfix] = a.split("x");
-                  const [bPrefix, bPostfix] = b.split("x");
-                  const prefixDiff = Number(aPrefix) - Number(bPrefix);
-                  return prefixDiff !== 0 ? prefixDiff : Number(aPostfix) - Number(bPostfix);
-                })
-                .map((s) => (
-                  <button
-                  key={s}
-                  onClick={() => setSizeFilter(s)}
-                  className={`px-3 py-3 rounded ${sizeFilter === s ? "bg-emerald-500 text-white" : "bg-[#1b263b] text-gray-300"}`}
-                  >
-                  {s}
-                  </button>
-                ))
-              )}
-              </div>
-            </label>
+              await addItemFromDrum(Number(selectedDrumId), String(L));
+              setInputLength("");
+              setSelectedDrumId("");
+            }}
+            onResetClick={() => {
+              setInputLength("");
+              setBrandFilter(brands[0]?.id ? String(brands[0].id) : "");
+              setTypeFilter(types[0]?.id ? String(types[0].id) : "");
+              setSizeFilter("");
+              setSelectedDrumId("");
+            }}
+          />
 
-            {sizeFilter && (
-              <label className="space-y-2 text-sm text-gray-300">
-                Select Drum
-                <select
-                  value={selectedDrumId}
-                  onChange={(e) => setSelectedDrumId(e.target.value)}
-                  className="w-full rounded-md border border-input bg-[#0b1220] px-3 py-2 text-base text-white"
-                >
-                  <option value="">Choose a drum</option>
-                  {drumsMatchingFilters.map((drum) => (
-                    <option
-                      key={drum.id}
-                      value={String(drum.id)}
-                      className="bg-[#0b1220] text-white"
-                    >
-                      {drum.available}m available - FROM {drum.curr_length}m
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-
-            <div className="mb-4">
-              <label className="space-y-2 text-sm text-gray-300">
-                Length to reserve (m)
-                <Input
-                  type="number"
-                  placeholder="Length to reserve"
-                  value={inputLength}
-                  onChange={(e) => setInputLength(e.target.value)}
-                />
-              </label>
-              <div className="mt-3 flex gap-2">
-                <Button
-                  type="button"
-                  onClick={async () => {
-                    const L = Number(inputLength);
-                    if (!inputLength || Number.isNaN(L) || L <= 0) {
-                      toast.error("Enter a valid reserve length");
-                      return;
-                    }
-                    if (!selectedDrumId) {
-                      toast.error("Select a drum");
-                      return;
-                    }
-                    
-                    const drum = availableCables.find((c) => c.id === Number(selectedDrumId));
-                    if (!drum) {
-                      toast.error("Selected drum not found");
-                      return;
-                    }
-
-                    if (L > (drum.curr_length ?? 0)) {
-                      toast.error(`Reserve length exceeds available length on this drum (${drum.curr_length}m)`);
-                      return;
-                    }
-
-                    await addItemFromDrum(Number(selectedDrumId), String(L));
-                    setInputLength("");
-                    setSelectedDrumId("");
-                  }}
-                >
-                  Add
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setInputLength("");
-                    setBrandFilter(brands[0]?.id ? String(brands[0].id) : "");
-                    setTypeFilter(types[0]?.id ? String(types[0].id) : "");
-                    setSizeFilter("");
-                    setSelectedDrumId("");
-                  }}
-                >
-                  Reset
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div className="bg-[#071025] border border-[#0b1220] rounded-md p-4">
-              <h3 className="text-sm font-semibold text-white mb-2">
-                Reservation List
-              </h3>
-
-              <div className="mb-3 p-2 bg-[#0047FF]/10 border border-[#0047FF]/30 rounded text-sm text-gray-300">
-                <span className="text-gray-400">Reservation ID: </span>
-                <span className="text-[#0047FF] font-semibold">{nextReservationId ?? "—"}</span>
-              </div>
-
-              <label className="space-y-2 text-sm text-gray-300 mb-3">
-                Reference
-                <Input
-                  className="mb-3"
-                  placeholder="Description"
-                  value={reservationRef}
-                  onChange={(e) => setReservationRef(e.target.value)}
-                />
-              </label>
-              {items.length === 0 ? (
-                <div className="text-sm text-gray-400 mb-4">
-                  No cables added yet.
-                </div>
-              ) : (
-                <div className="space-y-3 mb-4 max-h-[380px] overflow-auto">
-                  {items.map((it) => (
-                    <div
-                      key={it.reserve_version}
-                      className="flex items-center gap-3 bg-[#0b1220] p-3 rounded"
-                    >
-                      <div className="flex-1">
-                        <Input
-                          type="number"
-                          placeholder="Length"
-                          value={it.reserveLength}
-                          onChange={(e) =>
-                            updateItem(it.reserve_version, {
-                              reserveLength: e.target.value,
-                            })
-                          }
-                          className="w-24"
-                        />
-                      </div>
-                      <div className=" flex flex-col w-full text-sm text-gray-400">
-                        <div>
-                          {brands.find((b) => String(b.id) === brandFilter)
-                              ?.brand_name
-                          }{" "}
-                          - {types.find((i) => i.id === it.type)?.type_name}
-                        </div>
-                        <div>{it.drum_id}</div>
-                      </div>
-                      <div className="text-lg w-full flex justify-center text-white font-semibold">
-                        {it.size} - {it.available}m
-                      </div>
-                      <Button
-                        variant="destructive"
-                        type="button"
-                        onClick={() => removeItem(it.reserve_version)}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <Button
-                  onClick={submitReservation}
-                  disabled={submitting || items.length === 0}
-                  className="flex-1"
-                >
-                  {submitting ? "Submitting…" : "Submit Reservation"}
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setItems([]);
-                    setSizeFilter("");
-                    setTypeFilter("");
-                    setBrandFilter(brands[0]?.id ? String(brands[0].id) : "");
-                    setReservationRef("");
-                  }}
-                >
-                  Clear
-                </Button>
-              </div>
-            </div>
-          </div>
+          <ReserveListPanel
+            items={items}
+            selectedDrumId={selectedDrumId}
+            reservationRef={reservationRef}
+            nextReservationId={nextReservationId}
+            brands={brands}
+            types={types}
+            submitting={submitting}
+            onDrumSelect={setSelectedDrumId}
+            onReservationRefChange={setReservationRef}
+            onLengthChange={(reserveVersion, value) =>
+              updateItem(reserveVersion, { reserveLength: value })
+            }
+            onRemoveItem={removeItem}
+            onSubmit={submitReservation}
+            onClear={() => {
+              setItems([]);
+              setSizeFilter("");
+              setTypeFilter("");
+              setBrandFilter(brands[0]?.id ? String(brands[0].id) : "");
+              setReservationRef("");
+            }}
+          />
         </div>
       </div>
     </div>

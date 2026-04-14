@@ -2,7 +2,12 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
-import Link from "next/link";
+import {
+  StatsGrid,
+  LowStockAlerts,
+  StockByType,
+  RecentActivity,
+} from "./dashboard-components";
 
 type DrumCable = {
   id: string;
@@ -182,6 +187,41 @@ export function Dashboard() {
 
   const maxStockLength = stockByType.length > 0 ? Math.max(...stockByType.map((s) => s.length)) : 1;
 
+  const statCards = [
+    {
+      label: "Total Drums",
+      value: stats.totalDrums,
+      subtext: `${stats.availableDrums} available`,
+      emoji: "📦",
+      borderColor: "border-[#0047FF]/30",
+      shadowColor: "shadow-[#0047FF]/10",
+    },
+    {
+      label: "Total Stock",
+      value: `${stats.totalStock.toLocaleString()}m`,
+      subtext: "across all drums",
+      emoji: "📊",
+      borderColor: "border-[#0047FF]/30",
+      shadowColor: "shadow-[#0047FF]/10",
+    },
+    {
+      label: "Low Stock",
+      value: stats.lowStockDrums,
+      subtext: "drums need attention",
+      emoji: "⚠️",
+      borderColor: "border-yellow-500/30",
+      shadowColor: "shadow-yellow-500/10",
+    },
+    {
+      label: "Empty Drums",
+      value: stats.emptyDrums,
+      subtext: `${stats.reservedCount} reserved`,
+      emoji: "📭",
+      borderColor: "border-red-500/30",
+      shadowColor: "shadow-red-500/10",
+    },
+  ];
+
   return (
     <div className="p-8 space-y-8">
       {/* Header */}
@@ -193,184 +233,18 @@ export function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Total Drums */}
-        <div className="bg-[#111827]/80 border border-[#0047FF]/30 rounded-lg p-6 shadow-lg shadow-[#0047FF]/10">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-gray-400 text-sm font-medium">Total Drums</p>
-              <p className="text-3xl font-bold text-white mt-2">
-                {stats.totalDrums}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                {stats.availableDrums} available
-              </p>
-            </div>
-            <div className="text-2xl">📦</div>
-          </div>
-        </div>
-
-        {/* Total Stock */}
-        <div className="bg-[#111827]/80 border border-[#0047FF]/30 rounded-lg p-6 shadow-lg shadow-[#0047FF]/10">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-gray-400 text-sm font-medium">Total Stock</p>
-              <p className="text-3xl font-bold text-white mt-2">
-                {stats.totalStock.toLocaleString()}m
-              </p>
-              <p className="text-xs text-gray-500 mt-1">across all drums</p>
-            </div>
-            <div className="text-2xl">📊</div>
-          </div>
-        </div>
-
-        {/* Low Stock */}
-        <div className="bg-[#111827]/80 border border-yellow-500/30 rounded-lg p-6 shadow-lg shadow-yellow-500/10">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-gray-400 text-sm font-medium">Low Stock</p>
-              <p className="text-3xl font-bold text-white mt-2">
-                {stats.lowStockDrums}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">drums need attention</p>
-            </div>
-            <div className="text-2xl">⚠️</div>
-          </div>
-        </div>
-
-        {/* Empty Drums */}
-        <div className="bg-[#111827]/80 border border-red-500/30 rounded-lg p-6 shadow-lg shadow-red-500/10">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-gray-400 text-sm font-medium">Empty Drums</p>
-              <p className="text-3xl font-bold text-white mt-2">
-                {stats.emptyDrums}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                {stats.reservedCount} reserved
-              </p>
-            </div>
-            <div className="text-2xl">📭</div>
-          </div>
-        </div>
-      </div>
+      <StatsGrid stats={statCards} />
 
       {/* Low Stock Alerts */}
-      {lowStockAlerts.length > 0 && (
-        <div className="bg-[#111827]/80 border border-yellow-500/30 rounded-lg p-6 shadow-lg shadow-yellow-500/10">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-xl">⚠️</span>
-            <h2 className="font-semibold text-yellow-400">Low Stock Alerts</h2>
-          </div>
-          <div className="space-y-2">
-            {lowStockAlerts.map((cable) => (
-              <div
-                key={cable.id}
-                className="flex items-center justify-between py-2 border-b border-[#0047FF]/20 last:border-0"
-              >
-                <div>
-                  <p className="text-white font-medium">
-                    {cable.drum_id} · {cable.size}
-                  </p>
-                </div>
-                <p className="text-yellow-400 font-semibold">
-                  {cable.curr_length}m left →
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <LowStockAlerts alerts={lowStockAlerts} />
 
       {/* Stock by Type and Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Stock by Cable Type */}
-        <div className="bg-[#111827]/80 border border-[#0047FF]/30 rounded-lg p-6 shadow-lg shadow-[#0047FF]/10">
-          <h2 className="text-lg font-semibold text-white mb-6">
-            Stock by Cable Type (meters)
-          </h2>
-          <div className="space-y-4">
-            {stockByType.map((item) => (
-              <div key={item.name}>
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-sm font-medium text-gray-300">
-                    {item.name}
-                  </p>
-                  <p className="text-sm font-semibold text-white">
-                    {item.length}m
-                  </p>
-                </div>
-                <div className="w-full bg-[#0b1220] rounded-full h-2">
-                  <div
-                    className="bg-gradient-to-r from-[#0047FF] to-[#00C8FF] h-2 rounded-full"
-                    style={{
-                      width: `${(item.length / maxStockLength) * 100}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-          <Link href="/cables_view">
-            <p className="text-[#00C8FF] text-sm font-medium mt-6 hover:text-[#0047FF] transition-colors">
-              View full breakdown →
-            </p>
-          </Link>
-        </div>
+        <StockByType items={stockByType} maxLength={maxStockLength} />
 
         {/* Recent Activity */}
-        <div className="bg-[#111827]/80 border border-[#0047FF]/30 rounded-lg p-6 shadow-lg shadow-[#0047FF]/10">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-semibold text-white">Recent Activity</h2>
-            <Link href="/transactions">
-              <p className="text-[#00C8FF] text-sm font-medium hover:text-[#0047FF] transition-colors">
-                View all
-              </p>
-            </Link>
-          </div>
-          <div className="space-y-4">
-            {recentActivity.length === 0 ? (
-              <p className="text-gray-500 text-sm">No recent activity</p>
-            ) : (
-              recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-center justify-between py-2 border-b border-[#0047FF]/20 last:border-0">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        activity.type === "cut"
-                          ? "bg-red-500/20"
-                          : "bg-emerald-500/20"
-                      }`}
-                    >
-                      <span className="text-sm">
-                        {activity.type === "cut" ? "✂️" : "📌"}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-white">
-                        {activity.drum_id}
-                        {activity.ref_no && ` — ${activity.ref_no}`}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(activity.date).toLocaleDateString()} · {new Date(activity.date).toLocaleTimeString()}
-                      </p>
-                    </div>
-                  </div>
-                  <p
-                    className={`font-semibold ${
-                      activity.type === "cut"
-                        ? "text-red-400"
-                        : "text-emerald-400"
-                    }`}
-                  >
-                    {activity.type === "cut" ? "-" : "+"}
-                    {activity.amount}m
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+        <RecentActivity activities={recentActivity} />
       </div>
     </div>
   );
