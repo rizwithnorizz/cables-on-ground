@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Edit } from "lucide-react";
 
 type Transaction = {
   id: string;
@@ -30,7 +31,70 @@ export default function TransactionsList() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [editingGroupIdx, setEditingGroupIdx] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const itemsPerPage = 20;
+
+  const handleEditClick = (refNo: string | null, idx: number) => {
+    setEditingGroupIdx(idx);
+    setEditValue(refNo || "");
+  };
+
+  const handleCancel = () => {
+    setEditingGroupIdx(null);
+    setEditValue("");
+  };
+
+  const handleSave = async (oldRefNo: string | null, idx: number) => {
+    setIsSaving(true);
+    try {
+      // Update all transactions with the old ref_no to the new one
+      const oldKey = oldRefNo || "NO_REF";
+      
+      // Find all transactions with this ref_no
+      const transactionsToUpdate = transactions.filter(t => 
+        (t.ref_no || "NO_REF") === oldKey
+      );
+
+      if (transactionsToUpdate.length === 0) {
+        console.error("No transactions found to update");
+        setIsSaving(false);
+        return;
+      }
+
+      // Update each transaction in the database
+      const updates = transactionsToUpdate.map(tx =>
+        supabase
+          .from("cable_transactions")
+          .update({ ref_no: editValue || null })
+          .eq("id", tx.id)
+      );
+
+      const results = await Promise.all(updates);
+      
+      // Check for errors
+      for (const result of results) {
+        if (result.error) throw result.error;
+      }
+
+      // Update local state
+      const updatedTransactions = transactions.map(t =>
+        (t.ref_no || "NO_REF") === oldKey
+          ? { ...t, ref_no: editValue || null }
+          : t
+      );
+      setTransactions(updatedTransactions);
+
+      setEditingGroupIdx(null);
+      setEditValue("");
+    } catch (err) {
+      console.error("Failed to update reference number:", err);
+      alert("Failed to save changes. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -213,9 +277,45 @@ export default function TransactionsList() {
                   <div className="grid grid-cols-1 gap-2 md:grid-cols-3 mb-4">
                     <div>
                       <p className="text-xs text-gray-500 uppercase">Reference</p>
-                      <p className="text-sm font-semibold text-white">
-                        {group.ref_no || <span className="text-gray-500">—</span>}
-                      </p>
+                      {editingGroupIdx === idx ? (
+                        <div className="flex gap-2 mt-2">
+                          <Input
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            placeholder="Enter reference number"
+                            className="text-sm"
+                          />
+                          <Button
+                            onClick={() => handleSave(group.ref_no, idx)}
+                            disabled={isSaving}
+                            variant="default"
+                            className="text-xs whitespace-nowrap"
+                          >
+                            {isSaving ? "Saving..." : "Save"}
+                          </Button>
+                          <Button
+                            onClick={handleCancel}
+                            disabled={isSaving}
+                            variant="secondary"
+                            className="text-xs whitespace-nowrap"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between gap-2 mt-2">
+                          <p className="text-sm font-semibold text-white">
+                            <button
+                            onClick={() => handleEditClick(group.ref_no, idx)}
+                            className="pr-2"
+                          >
+                            <Edit size={12} />
+                          </button>
+                            {group.ref_no || <span className="text-gray-500">—</span>}
+                          </p>
+                          
+                        </div>
+                      )}
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 uppercase">Total Length</p>
