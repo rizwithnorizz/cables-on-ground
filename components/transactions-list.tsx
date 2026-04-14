@@ -4,7 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Edit } from "lucide-react";
+import { Edit, Download } from "lucide-react";
+import JSZip from "jszip";
+import { toast } from "react-hot-toast";
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { saveAs } = require("file-saver");
 
 type Transaction = {
   id: string;
@@ -22,7 +27,6 @@ type Transaction = {
   ref_no: string | null;
 };
 
-
 export default function TransactionsList() {
   const supabase = createClient();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -34,6 +38,9 @@ export default function TransactionsList() {
   const [editingGroupIdx, setEditingGroupIdx] = useState<number | null>(null);
   const [editValue, setEditValue] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [downloadingGroupIdx, setDownloadingGroupIdx] = useState<number | null>(
+    null,
+  );
   const itemsPerPage = 20;
 
   const handleEditClick = (refNo: string | null, idx: number) => {
@@ -46,15 +53,108 @@ export default function TransactionsList() {
     setEditValue("");
   };
 
+  const handleDownloadCertificates = async (
+    group: (typeof groupedTransactions)[0],
+    groupIdx: number,
+  ) => {
+    setDownloadingGroupIdx(groupIdx);
+    try {
+      // Collect all unique certificates from the group
+      const certificateUrls = group.transactions
+        .map((tx) => tx.drum_id.testcertificate)
+        .filter((cert) => cert !== null && cert !== undefined) as string[];
+
+      if (certificateUrls.length === 0) {
+        toast.error("No certificates available for download in this group.");
+        setDownloadingGroupIdx(null);
+        return;
+      }
+
+      const uniqueCerts = Array.from(new Set(certificateUrls));
+
+      // Create a zip file
+      const zip = new JSZip();
+      let successCount = 0;
+      let failedCount = 0;
+
+      // Download each certificate and add to zip
+      for (let i = 0; i < uniqueCerts.length; i++) {
+        try {
+          const certUrl = uniqueCerts[i];
+          const response = await fetch(certUrl);
+
+          if (!response.ok) {
+            failedCount++;
+            continue;
+          }
+
+          const blob = await response.blob();
+
+          // Extract filename from URL or create one
+          const urlParts = certUrl.split("/");
+          let filename = urlParts[urlParts.length - 1].split("?")[0];
+
+          // If filename is unclear, create a descriptive one
+          if (!filename || filename.length < 3) {
+            const drumIds = group.transactions
+              .filter((tx) => tx.drum_id.testcertificate === certUrl)
+              .map((tx) => tx.drum_id.drum_id)
+              .join("_");
+            const ext = blob.type === "application/pdf" ? "pdf" : "jpg";
+            filename = `certificate_${drumIds}_${i + 1}.${ext}`;
+          }
+
+          zip.file(filename, blob);
+          successCount++;
+        } catch (err) {
+          console.error(`Failed to download certificate ${i + 1}:`, err);
+          failedCount++;
+        }
+      }
+
+      if (successCount === 0) {
+        toast.error("Failed to download any certificates.");
+        setDownloadingGroupIdx(null);
+        return;
+      }
+
+      // Generate the zip file
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+
+      // Create filename with ref_no if available
+      const refNo = group.ref_no
+        ? group.ref_no.replace(/\s+/g, "_")
+        : "transactions";
+      const timestamp = new Date().toISOString().split("T")[0];
+      const zipFilename = `certificates_${refNo}_${timestamp}.zip`;
+
+      // Download the zip file
+      saveAs(zipBlob, zipFilename);
+
+      if (failedCount > 0) {
+        toast.success(
+          `Downloaded ${successCount} certificate(s) (${failedCount} failed)`,
+        );
+      } else {
+        toast.success(`Downloaded ${successCount} certificate(s) successfully`);
+      }
+    } catch (err) {
+      console.error("Failed to create zip file:", err);
+      toast.error("Failed to download certificates. Please try again.");
+    } finally {
+      setDownloadingGroupIdx(null);
+    }
+  };
+
   const handleSave = async (oldRefNo: string | null, idx: number) => {
     setIsSaving(true);
     try {
       // Update all transactions with the old ref_no to the new one
       const oldKey = oldRefNo || "NO_REF";
-      
+
       // Find all transactions with this ref_no
-      const transactionsToUpdate = transactions.filter(t => 
-        (t.ref_no || "NO_REF") === oldKey
+      const transactionsToUpdate = transactions.filter(
+        (t) => (t.ref_no || "NO_REF") === oldKey,
       );
 
       if (transactionsToUpdate.length === 0) {
@@ -64,25 +164,25 @@ export default function TransactionsList() {
       }
 
       // Update each transaction in the database
-      const updates = transactionsToUpdate.map(tx =>
+      const updates = transactionsToUpdate.map((tx) =>
         supabase
           .from("cable_transactions")
           .update({ ref_no: editValue || null })
-          .eq("id", tx.id)
+          .eq("id", tx.id),
       );
 
       const results = await Promise.all(updates);
-      
+
       // Check for errors
       for (const result of results) {
         if (result.error) throw result.error;
       }
 
       // Update local state
-      const updatedTransactions = transactions.map(t =>
+      const updatedTransactions = transactions.map((t) =>
         (t.ref_no || "NO_REF") === oldKey
           ? { ...t, ref_no: editValue || null }
-          : t
+          : t,
       );
       setTransactions(updatedTransactions);
 
@@ -104,7 +204,8 @@ export default function TransactionsList() {
       try {
         const { data, error } = await supabase
           .from("cable_transactions")
-          .select(`
+          .select(
+            `
             id,
             created_at,
             drum_id (
@@ -118,11 +219,12 @@ export default function TransactionsList() {
             length_cut,
             balance_cable,
             ref_no
-            `)
+            `,
+          )
           .order("created_at", { ascending: false });
 
         if (error) throw error;
-        if (isMounted) setTransactions(data as any?? []);
+        if (isMounted) setTransactions((data as any) ?? []);
       } catch (err) {
         console.error("Failed to load transactions:", err);
       } finally {
@@ -174,7 +276,10 @@ export default function TransactionsList() {
 
     return Object.entries(groups)
       .map(([ref_no, txs]) => {
-        const totalLength = txs.reduce((sum, t) => sum + (t.length_cut || 0), 0);
+        const totalLength = txs.reduce(
+          (sum, t) => sum + (t.length_cut || 0),
+          0,
+        );
         const dates = txs.map((t) => new Date(t.created_at));
         const minDate = new Date(Math.min(...dates.map((d) => d.getTime())))
           .toISOString()
@@ -193,8 +298,7 @@ export default function TransactionsList() {
         };
       })
       .sort(
-        (a, b) =>
-          new Date(b.maxDate).getTime() - new Date(a.maxDate).getTime(),
+        (a, b) => new Date(b.maxDate).getTime() - new Date(a.maxDate).getTime(),
       );
   }, [filteredTransactions]);
 
@@ -214,7 +318,8 @@ export default function TransactionsList() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white">Transactions</h1>
         <p className="mt-2 text-gray-400">
-          View and search all cable cutting transactions grouped by reference number.
+          View and search all cable cutting transactions grouped by reference
+          number.
         </p>
       </div>
 
@@ -263,9 +368,13 @@ export default function TransactionsList() {
 
         {/* Results */}
         {loading ? (
-          <div className="text-center text-gray-400">Loading transactions...</div>
+          <div className="text-center text-gray-400">
+            Loading transactions...
+          </div>
         ) : groupedTransactions.length === 0 ? (
-          <div className="text-center text-gray-400">No transactions found.</div>
+          <div className="text-center text-gray-400">
+            No transactions found.
+          </div>
         ) : (
           <>
             <div className="space-y-4">
@@ -274,9 +383,11 @@ export default function TransactionsList() {
                   key={idx}
                   className="bg-[#0b1220] border border-[#1f2937] rounded-lg p-4"
                 >
-                  <div className="grid grid-cols-1 gap-2 md:grid-cols-3 mb-4">
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-4 mb-4">
                     <div>
-                      <p className="text-xs text-gray-500 uppercase">Reference</p>
+                      <p className="text-xs text-gray-500 uppercase">
+                        Reference
+                      </p>
                       {editingGroupIdx === idx ? (
                         <div className="flex gap-2 mt-2">
                           <Input
@@ -304,32 +415,57 @@ export default function TransactionsList() {
                         </div>
                       ) : (
                         <div className="flex items-center justify-between gap-2 mt-2">
-                          <p className="text-sm font-semibold text-white">
+                          <div className="flex items-center gap-2">
                             <button
-                            onClick={() => handleEditClick(group.ref_no, idx)}
-                            className="pr-2"
-                          >
-                            <Edit size={12} />
-                          </button>
-                            {group.ref_no || <span className="text-gray-500">—</span>}
-                          </p>
-                          
+                              onClick={() => handleEditClick(group.ref_no, idx)}
+                              className="pr-2 hover:text-blue-400 transition"
+                              title="Edit reference number"
+                            >
+                              <Edit size={14} />
+                            </button>
+                            <p className="text-sm font-semibold text-white">
+                              {group.ref_no || (
+                                <span className="text-gray-500">—</span>
+                              )}
+                            </p>
+                          </div>
                         </div>
                       )}
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 uppercase">Total Length</p>
+                      <p className="text-xs text-gray-500 uppercase">
+                        Total Length
+                      </p>
                       <p className="text-sm font-semibold text-white">
                         {group.totalLength.toFixed(2)} m
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 uppercase">Date Range</p>
+                      <p className="text-xs text-gray-500 uppercase">
+                        Date Range
+                      </p>
                       <p className="text-sm font-semibold text-white">
                         {group.minDate === group.maxDate
                           ? group.minDate
                           : `${group.minDate} to ${group.maxDate}`}
                       </p>
+                    </div>
+                    <div className="flex items-center justify-end">
+                           {group.transactions.some(
+                      (tx) => tx.drum_id.testcertificate,
+                    ) && (
+                      <button
+                        onClick={() => handleDownloadCertificates(group, idx)}
+                        disabled={downloadingGroupIdx === idx}
+                        className="flex items-center justify-center gap-1 px-2 w-1/2 py-1 rounded text-xs bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition"
+                        title="Download all certificates as zip"
+                      >
+                        <Download size={12} />
+                        {downloadingGroupIdx === idx
+                          ? "Downloading..."
+                          : "Download all"}
+                      </button>
+                    )}
                     </div>
                   </div>
 
@@ -374,7 +510,13 @@ export default function TransactionsList() {
                             className="border-b border-[#0b1220] hover:bg-[#111827] transition"
                           >
                             <td className="px-2 py-2 text-white">
-                              { tx.drum_id.drum_id ? tx.drum_id.drum_id : <span className="text-gray-500">Unavailable Drum Number</span> }
+                              {tx.drum_id.drum_id ? (
+                                tx.drum_id.drum_id
+                              ) : (
+                                <span className="text-gray-500">
+                                  Unavailable Drum Number
+                                </span>
+                              )}
                             </td>
                             <td className="px-2 py-2 text-white">
                               {tx.drum_id.brand.brand_name}
@@ -385,7 +527,7 @@ export default function TransactionsList() {
                             <td className="px-2 py-2 text-white">
                               {tx.drum_id.size}
                             </td>
-                            
+
                             <td className="px-2 py-2 text-white">
                               {tx.balance_cable + tx.length_cut} METERS
                             </td>
@@ -411,7 +553,7 @@ export default function TransactionsList() {
                               {tx.drum_id.testcertificate ? (
                                 <a
                                   href={tx.drum_id.testcertificate}
-                                  target="_blank" 
+                                  target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-blue-400 hover:underline"
                                 >
@@ -434,7 +576,8 @@ export default function TransactionsList() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between pt-6 border-t border-[#1f2937]">
                 <div className="text-sm text-gray-400">
-                  Showing {startIdx + 1} to {Math.min(endIdx, groupedTransactions.length)} of{" "}
+                  Showing {startIdx + 1} to{" "}
+                  {Math.min(endIdx, groupedTransactions.length)} of{" "}
                   {groupedTransactions.length} transactions
                 </div>
                 <div className="flex items-center gap-2">
@@ -459,12 +602,14 @@ export default function TransactionsList() {
                         >
                           {page}
                         </button>
-                      )
+                      ),
                     )}
                   </div>
                   <Button
                     variant="secondary"
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
                     disabled={currentPage === totalPages}
                   >
                     Next
