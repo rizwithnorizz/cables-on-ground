@@ -39,7 +39,7 @@ export function ActivityItem({
           type === "cut" ? "text-red-400" : "text-emerald-400"
         }`}
       >
-        {type === "cut" ? "-" : "+"}
+        {type === "cut" ? "-" : "Reserved  "}
         {amount}m
       </p>
     </div>

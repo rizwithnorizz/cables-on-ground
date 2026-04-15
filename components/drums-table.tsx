@@ -207,7 +207,7 @@ export function DrumsTable() {
   return (
     <div className="p-8 space-y-6 relative z-10">
       <div>
-        <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-[#0047FF] to-[#00C8FF] bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold mb-6">
           Drums Inventory
         </h1>
 

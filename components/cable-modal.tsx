@@ -887,7 +887,7 @@ export default function CableModal({
                     <li key={t.id} className="flex items-start justify-between ">
                       <div>
                         <div className="text-md font-medium text-gray-200">
-                          REF: {t.ref_no}
+                          {t.ref_no}
                         </div>
                       </div>
                       <div

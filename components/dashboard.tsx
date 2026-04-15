@@ -226,7 +226,7 @@ export function Dashboard() {
     <div className="p-8 space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-[#0047FF] to-[#00C8FF] bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold">
           Dashboard
         </h1>
         <p className="text-gray-400 mt-2">Overview of your cable drum inventory</p>

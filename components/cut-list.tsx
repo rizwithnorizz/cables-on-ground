@@ -270,13 +270,8 @@ export default function CutList() {
       }
 
       // delete reservation if one was loaded
+      // Only delete reservations for items that are actually being cut
       if (reservationIdInput) {
-        const { error: resErr } = await supabase
-          .from("reservation")
-          .select("*")
-          .eq("reservation_id", reservationIdInput);
-        if (resErr) throw resErr;
-
         for (const it of items) {
           const { error: deleteErr } = await supabase
             .from("reservation")
