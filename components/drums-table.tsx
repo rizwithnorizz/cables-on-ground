@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import CableModal from '@/components/cable-modal';
 import { DrumsFilters, DrumsGrid } from './drums';
+import { ExcelExport } from './drums/ExcelExport';
 
 type DrumCable = {
   id: bigint;
@@ -222,6 +223,11 @@ export function DrumsTable() {
           onTypeChange={setTypeFilter}
           onSizeChange={setSizeFilter}
         />
+
+        {/* Download Button */}
+        <div className="mb-4 flex justify-end">
+          <ExcelExport cables={cables} types={types} brands={brands} brandMap={brandMap} typeMap={typeMap} />
+        </div>
 
         {/* Results count */}
         <div className="text-sm text-gray-400 mb-4">
