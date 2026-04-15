@@ -1,7 +1,11 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Edit, Download } from "lucide-react";
 import { TransactionTable } from "./TransactionTable";
+import { createClient } from '@/lib/supabase/client';
 
 type Transaction = {
   id: string;
@@ -57,6 +61,17 @@ export function TransactionGroupCard({
   onDownload,
   hasDownloadableContent,
 }: TransactionGroupCardProps) {
+  const supabase = createClient();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session?.user);
+    };
+    checkAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <div className="bg-[#0b1220] border border-[#1f2937] rounded-lg p-4">
       {/* Group Header */}
@@ -92,13 +107,15 @@ export function TransactionGroupCard({
           ) : (
             <div className="flex items-center justify-between gap-2 mt-2">
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => onEditClick(group.ref_no, idx)}
-                  className="pr-2 hover:text-blue-400 transition"
-                  title="Edit reference number"
-                >
-                  <Edit size={14} />
-                </button>
+                {!!isAuthenticated && (
+                  <button
+                    onClick={() => onEditClick(group.ref_no, idx)}
+                    className="pr-2 hover:text-blue-400 transition"
+                    title="Edit reference number"
+                  >
+                    <Edit size={14} />
+                  </button>
+                )}
                 <p className="text-sm font-semibold text-white">
                   {group.ref_no || <span className="text-gray-500">—</span>}
                 </p>

@@ -13,6 +13,13 @@ interface SidebarItem {
   icon?: React.ReactNode;
 }
 
+const userSidebarItems: SidebarItem[] = [
+  { label: 'Dashboard', href: '/dashboard' },
+  { label: 'Cables View', href: '/cables_view' },
+  { label: 'Reserve', href: '/reserve' }, 
+  { label: 'Transactions', href: '/transactions' },
+];
+
 const allSidebarItems: SidebarItem[] = [
   { label: 'Dashboard', href: '/dashboard' },
   { label: 'Cables View', href: '/cables_view' },
@@ -25,11 +32,13 @@ const allSidebarItems: SidebarItem[] = [
 const publicSidebarItems: SidebarItem[] = [
   { label: 'Cables View', href: '/cables_view' },
   { label: 'Reservations', href: '/reservations' },
+  { label: 'Transactions', href: '/transactions' },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const router = useRouter();
@@ -38,14 +47,31 @@ export function Sidebar() {
     const checkAuth = async () => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      setIsAuthenticated(!!user);
+      
+      if (user) {
+        setIsAuthenticated(true);
+        
+        // Check if user is in admin_role table
+        const { data: adminRole, error } = await supabase
+          .from('admin_role')
+          .select('*')
+          .eq('uuid', user.id)
+          .single();
+        
+        setIsAdmin(!!adminRole && !error);
+      } else {
+        setIsAuthenticated(false);
+        setIsAdmin(false);
+      }
+      
       setLoading(false);
     };
 
     checkAuth();
   }, []);
 
-  const sidebarItems = isAuthenticated ? allSidebarItems : publicSidebarItems;
+  const sidebarItems = isAuthenticated ? (isAdmin ? allSidebarItems : userSidebarItems) : publicSidebarItems;
+  
 
 
  if (loading) {

@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Arrow } from "@radix-ui/react-dropdown-menu";
 
 export function LoginForm({
   className,
@@ -93,14 +94,10 @@ export function LoginForm({
                 {isLoading ? "Logging in..." : "Login"}
               </Button>
             </div>
-            <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{" "}
-              <Link
-                href="/auth/sign-up"
-                className="underline underline-offset-4"
-              >
-                Sign up
-              </Link>
+            <div className="mt-4 text-sm">
+              <button className="bg-white rounded px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition"> 
+                <Arrow /> Dashboard
+              </button>
             </div>
           </form>
         </CardContent>

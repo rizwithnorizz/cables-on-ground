@@ -76,45 +76,6 @@ export default function ReservationsList() {
     };
   }, []);
 
-  const handleDeleteReservation = async (reservationId: number, drumCableId: number) => {
-    setDeletingId(reservationId);
-    try {
-      // Delete the reservation
-      const { error: deleteErr } = await supabase
-        .from("reservation")
-        .delete()
-        .eq("id", reservationId);
-
-      if (deleteErr) throw deleteErr;
-
-      // Check if there are other reservations for this drum
-      const { data: remainingReservations, error: queryErr } = await supabase
-        .from("reservation")
-        .select("id")
-        .eq("drum_id", drumCableId);
-
-      if (queryErr) throw queryErr;
-
-      // If no other reservations, set reserved to false
-      if (!remainingReservations || remainingReservations.length === 0) {
-        const { error: updateErr } = await supabase
-          .from("drum_cables")
-          .update({ reserved: false })
-          .eq("id", drumCableId);
-
-        if (updateErr) throw updateErr;
-      }
-
-      // Remove from local state
-      setReservations(prev => prev.filter(r => r.id !== reservationId));
-      toast.success("Reservation deleted successfully");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete reservation");
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
   const filteredReservations = useMemo(() => {
     return reservations.filter((r) => {
       const createdDate = new Date(r.created_at);
@@ -282,7 +243,6 @@ export default function ReservationsList() {
                       <th className="w-1/6 text-left py-2 px-3 text-gray-300 font-medium">Size</th>
                       <th className="w-1/6 text-left py-2 px-3 text-gray-300 font-medium">Drum Length</th>
                       <th className="w-1/6 text-right py-2 px-3 text-gray-300 font-medium">Reserved Length (M)</th>
-                      <th className="w-1/6 text-right py-2 px-3 text-gray-300 font-medium">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -303,17 +263,6 @@ export default function ReservationsList() {
                         <td className="w-1/6 py-2 px-3 text-white">{res.drum_cables.curr_length} m</td>
                         <td className="w-1/6 py-2 px-3 text-right text-white font-semibold">
                           {res.length} m
-                        </td>
-                        <td className="w-1/6 py-2 px-3 text-right">
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            disabled={deletingId === res.id}
-                            onClick={() => handleDeleteReservation(res.id, res.drum_cables.id)}
-                            className="text-xs"
-                          >
-                            {deletingId === res.id ? "Deleting..." : "Delete"}
-                          </Button>
                         </td>
                       </tr>
                     ))}

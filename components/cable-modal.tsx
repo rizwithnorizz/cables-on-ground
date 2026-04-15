@@ -760,7 +760,8 @@ export default function CableModal({
                       >
                         View certificate
                       </a>
-                      <button
+                     { user && ( 
+                       <button
                         onClick={handleRemoveCertificate}
                         disabled={isRemovingCert}
                         className="text-red-500 hover:text-red-400 text-xs px-2 py-1 rounded hover:bg-red-500/10 disabled:opacity-50"
@@ -768,6 +769,7 @@ export default function CableModal({
                       >
                         {isRemovingCert ? "Removing..." : "Remove"}
                       </button>
+                     )}
                     </div>
                   ) : !user ? (
                     <div className="text-sm text-gray-500">

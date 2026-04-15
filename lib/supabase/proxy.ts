@@ -48,7 +48,7 @@ export async function updateSession(request: NextRequest) {
   const user = data?.claims;
 
   // Public routes that don't require authentication
-  const publicRoutes = ["/auth", "/login", "/cables_view", "/reservations"];
+  const publicRoutes = ["/auth", "/login", "/cables_view", "/reservations", "/transactions"];
   const isPublicRoute = publicRoutes.some(route => request.nextUrl.pathname.startsWith(route)) || request.nextUrl.pathname === "/";
 
   if (!user && !isPublicRoute) {
@@ -57,6 +57,31 @@ export async function updateSession(request: NextRequest) {
     url.pathname = "/auth/login";
     return NextResponse.redirect(url);
   }
+
+  // Admin-only routes
+  const adminOnlyRoutes = ["/cutting", "/new_drum"];
+  const isAdminRoute = adminOnlyRoutes.some(route => request.nextUrl.pathname.startsWith(route));
+
+
+  // If user is authenticated and trying to access an admin-only route
+  if (user && isAdminRoute) {
+    // Check if user is in admin_role table
+    const { data: adminRole } = await supabase
+      .from("admin_role")
+      .select("*")
+      .eq("uuid", user.sub)
+      .single();
+
+    if (!adminRole) {
+      // User is not admin, redirect to dashboard
+      const url = request.nextUrl.clone();
+      url.pathname = "/cables_view";
+      return NextResponse.redirect(url);
+    }
+  }
+
+
+
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
   // If you're creating a new response object with NextResponse.next() make sure to:
