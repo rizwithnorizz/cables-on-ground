@@ -66,7 +66,6 @@ export function ExcelExport({ cables, types, brands, brandMap, typeMap }: ExcelE
       { header: 'Type', key: 'type', width: 20 },
       { header: 'Size', key: 'size', width: 15 },
       { header: 'Available Length (m)', key: 'curr_length', width: 18 },
-      { header: 'Initial Length (m)', key: 'initial_length', width: 18 },
       { header: 'Reserved', key: 'reserved', width: 12 }
     ];
 

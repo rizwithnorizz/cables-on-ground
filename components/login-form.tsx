@@ -95,8 +95,8 @@ export function LoginForm({
               </Button>
             </div>
             <div className="mt-4 text-sm">
-              <button className="bg-white rounded px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition"> 
-                <Arrow /> Dashboard
+              <button className="px-4 py-2 text-sm font-medium text-blue-500 underline"> 
+                <a href="/">Back to Home</a>
               </button>
             </div>
           </form>

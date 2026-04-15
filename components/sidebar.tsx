@@ -32,7 +32,6 @@ const allSidebarItems: SidebarItem[] = [
 const publicSidebarItems: SidebarItem[] = [
   { label: 'Cables View', href: '/cables_view' },
   { label: 'Reservations', href: '/reservations' },
-  { label: 'Transactions', href: '/transactions' },
 ];
 
 export function Sidebar() {
@@ -54,9 +53,9 @@ export function Sidebar() {
         // Check if user is in admin_role table
         const { data: adminRole, error } = await supabase
           .from('admin_role')
-          .select('*')
-          .eq('uuid', user.id)
-          .single();
+          .select('uuid')
+          .eq('uuid',user.id)
+          .maybeSingle();
         
         setIsAdmin(!!adminRole && !error);
       } else {
