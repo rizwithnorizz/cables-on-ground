@@ -104,7 +104,7 @@ export default function CutList() {
   // default filters
   useEffect(() => {
     if (!brandFilter && brands.length > 0) setBrandFilter(String(brands[0].id));
-    if (!typeFilter && types.length > 0) setTypeFilter(String(types[0].id));
+    if (!typeFilter && types.length > 1) setTypeFilter(String(types[1].id));
   }, [brands, types, brandFilter, typeFilter]);
 
   const availableSizes = useMemo(() => {
@@ -295,6 +295,8 @@ export default function CutList() {
       toast.success("Cuts recorded successfully.");
       setItems([]);
       setReservationIdInput("");
+      setTransactionRef("");
+      setInputLength("");
 
       const { data } = await supabase
         .from("drum_cables")

@@ -280,6 +280,7 @@ export default function ReserveList() {
             typeFilter={typeFilter}
             sizeFilter={sizeFilter}
             inputLength={inputLength}
+            selectedDrumId={selectedDrumId}
             onBrandChange={(value) => {
               setBrandFilter(value);
               setTypeFilter("");
@@ -291,6 +292,7 @@ export default function ReserveList() {
             }}
             onSizeChange={setSizeFilter}
             onLengthChange={setInputLength}
+            onDrumSelect={setSelectedDrumId}
             onAddClick={async () => {
               const L = Number(inputLength);
               if (!inputLength || Number.isNaN(L) || L <= 0) {

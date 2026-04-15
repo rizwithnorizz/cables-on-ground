@@ -1,19 +1,31 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
+type DrumCable = {
+  id: number;
+  drum_id: string;
+  brand: number;
+  type: number;
+  size: string;
+  curr_length: number;
+  available: number;
+};
+
 type ReserveFiltersProps = {
   brands: { id: number; brand_name: string }[];
   types: { id: number; type_name: string }[];
   availableSizes: string[];
-  availableCables: any[];
+  availableCables: DrumCable[];
   brandFilter: string;
   typeFilter: string;
   sizeFilter: string;
   inputLength: string;
+  selectedDrumId: string;
   onBrandChange: (value: string) => void;
   onTypeChange: (value: string) => void;
   onSizeChange: (value: string) => void;
   onLengthChange: (value: string) => void;
+  onDrumSelect: (drumId: string) => void;
   onAddClick: () => void;
   onResetClick: () => void;
 };
@@ -22,14 +34,17 @@ export function ReserveFilters({
   brands,
   types,
   availableSizes,
+  availableCables,
   brandFilter,
   typeFilter,
   sizeFilter,
   inputLength,
+  selectedDrumId,
   onBrandChange,
   onTypeChange,
   onSizeChange,
   onLengthChange,
+  onDrumSelect,
   onAddClick,
   onResetClick,
 }: ReserveFiltersProps) {
@@ -104,6 +119,29 @@ export function ReserveFilters({
           )}
         </div>
       </label>
+
+      {/* Select Drum - Only show when size is selected */}
+      {sizeFilter && (
+        <label className="space-y-2 text-sm text-gray-300 mb-4">
+          Select Drum
+          <select
+            value={selectedDrumId}
+            onChange={(e) => onDrumSelect(e.target.value)}
+            className="w-full rounded-md border border-input bg-[#0b1220] px-3 py-2 text-base text-white"
+          >
+            <option value="">Choose a drum</option>
+            {availableCables.map((drum) => (
+              <option
+                key={drum.id}
+                value={String(drum.id)}
+                className="bg-[#0b1220] text-white"
+              >
+                {drum.available}m available - FROM {drum.curr_length}m
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       <div className="mb-4">
         <label className="space-y-2 text-sm text-gray-300">

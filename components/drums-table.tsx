@@ -88,8 +88,8 @@ export function DrumsTable() {
       setBrandFilter(String(brands[0].id));
     }
 
-    if (!typeFilter && types.length > 0) {
-      setTypeFilter(String(types[0].id));
+    if (!typeFilter && types.length > 1) {
+      setTypeFilter(String(types[1].id));
     }
   }, [brands, types, brandFilter, typeFilter]);
 
