@@ -64,7 +64,7 @@ export function Dashboard() {
             .order("created_at", { ascending: false })
             .limit(10),
           supabase
-            .from("cable_reservations")
+            .from("reservation")
             .select("*")
             .order("created_at", { ascending: false }),
         ]);
