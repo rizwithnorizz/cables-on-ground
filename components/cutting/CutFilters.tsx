@@ -93,7 +93,7 @@ export function CutFilters({
                   onClick={() => onSizeChange(s)}
                   className={`px-3 py-3 rounded ${
                     sizeFilter === s
-                      ? "bg-green-400 text-white"
+                      ? "bg-green-600 text-white"
                       : "bg-secondary dark:bg-[#1b263b]  dark:text-gray-300"
                   }`}
                 >
