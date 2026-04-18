@@ -99,7 +99,7 @@ export function ExcelExport({ cables, types, brands, brandMap, typeMap }: ExcelE
   };
 
   return (
-    <Button onClick={downloadExcelFile} className="bg-green-400 text-white hover:bg-emerald-700">
+    <Button onClick={downloadExcelFile} className="bg-green-600 text-white hover:bg-green-700">
       Download Excel
     </Button>
   );
