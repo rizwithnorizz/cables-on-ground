@@ -28,10 +28,10 @@ export function CableCard({ cable, onSelect }: CableCardProps) {
     <button
       onClick={() => onSelect(cable)}
       className={`space-y-2 bg-white dark:bg-[#111827]/80 border dark:border-[#0047FF]/30 border-gray-200 rounded-lg shadow-lg ${
-        cable.reserved ? "bg-yellow-200 shadow-yellow-200 dark:shadow-[#FFFF00]/50" : "dark:shadow-[#0047FF]/10"
+        cable.reserved ? "bg-emerald-700 shadow-emerald-200 dark:shadow-[#00FF00]/50" : "dark:shadow-[#0047FF]/10"
       } w-full h-full p-4 flex flex-col items-center justify-center transition-transform hover:scale-[1.02]`}
     >
-      <div className="text-sm items-center flex justify-center text-foreground dark:text-white">
+      <div className={`text-sm items-center flex justify-center text-foreground ${cable.reserved ? "text-white" : ""}`}>
         {cable.curr_length} M
       </div>
     </button>
