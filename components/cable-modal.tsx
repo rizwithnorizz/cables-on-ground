@@ -845,20 +845,20 @@ export default function CableModal({
           </div>
 
           {reservations.length > 0 && (
-            <div className="mt-6 bg-[#1a1f3a] p-4 rounded-lg border border-[#0047FF]/10">
-              <h4 className="text-sm font-semibold text-gray-200 mb-3">Reservations</h4>
+            <div className="mt-6 dark:bg-[#1a1f3a] p-4 rounded-lg border dark:border-[#0047FF]/10">
+              <h4 className="text-sm font-semibold dark:text-gray-200 mb-3">Reservations</h4>
               <div className="space-y-2">
                 {reservations.map((res) => (
-                  <div key={res.id} className="flex items-center justify-between bg-[#0b1220] p-2 rounded text-sm">
+                  <div key={res.id} className="flex items-center justify-between dark:bg-[#0b1220]/40 p-2 rounded text-sm">
                     <div>
-                      <div className="text-gray-300 font-medium">
+                      <div className="dark:text-gray-300 font-medium">
                         {res.length}m {res.ref_no && `- ${res.ref_no}`}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs dark:text-gray-500">
                         ID: {res.reservation_id}
                       </div>
                     </div>
-                    <div className="text-xs text-gray-400">
+                    <div className="text-xs dark:text-gray-400">
                       {new Date(res.created_at).toLocaleDateString()}
                     </div>
                   </div>
@@ -914,9 +914,9 @@ export default function CableModal({
     {showDeleteConfirm && (
       <div className="fixed md:ml-64 inset-0 flex items-center justify-center z-[1000]">
         <div className="absolute inset-0 bg-black/80" onClick={() => !isDeleting && setShowDeleteConfirm(false)} />
-        <div className="relative z-10 w-full max-w-sm mx-4 bg-[#0f1724] rounded-2xl border border-red-500/30 p-6 shadow-lg">
-          <h2 className="text-lg font-semibold text-gray-100 mb-2">Delete Cable</h2>
-          <p className="text-gray-300 mb-6">
+        <div className="relative z-10 w-full max-w-sm mx-4 bg-white dark:bg-[#0f1724] rounded-2xl border border-red-500/30 p-6 shadow-lg">
+          <h2 className="text-lg font-semibold dark:text-gray-100 mb-2">Delete Cable</h2>
+          <p className="dark:text-gray-300 mb-6">
             Are you sure you want to delete cable <span className="font-semibold">{cable?.drum_id}</span>? This action cannot be undone.
           </p>
           <div className="flex gap-3 justify-end">

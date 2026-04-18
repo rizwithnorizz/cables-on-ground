@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase/client";
 import { CutFilters, CutListPanel } from "./cutting";
+import { LaborerDropdown } from "@/components/laborer-dropdown";
+import LaborerSettings from "@/components/laborer-settings";
 
 type DrumCable = {
   id: string;
@@ -26,6 +28,15 @@ type CutItem = {
   refNo?: string;
   cut_version: number;
 };
+
+type Laborers = {
+  id: number;
+  created_at: string;
+  name: string;
+  mobile_no: string;
+  default: boolean;
+}
+
 
 type Transaction = {
   refNo: string;
@@ -58,6 +69,9 @@ export default function CutList() {
   const [reservationIdInput, setReservationIdInput] = useState<string>("");
   const [isLoadingReservation, setIsLoadingReservation] = useState(false);
 
+  const [laborers, setLaborers] = useState<Laborers[]>([]);
+  const [selectedLaborer, setSelectedLaborer] = useState<Laborers | null>(null);
+  const [openLaborSettings, setOpenLaborSettings] = useState(false);
   // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
@@ -89,6 +103,25 @@ export default function CutList() {
           throw typesRes.error || brandsRes.error || cablesRes.error;
         }
 
+        const [laborersRes] = await Promise.all([
+          supabase
+            .from("laborer")
+            .select("*")
+            .order("name", { ascending: true }),
+        ]);
+        if (laborersRes.error) {
+          toast.error("Failed to load laborers");
+          throw laborersRes.error;
+        }
+        const laborersData = laborersRes.data ?? [];
+        setLaborers(laborersData);
+        // Set default laborer on load
+        const defaultLaborer = laborersData.find((l) => l.default);
+        if (defaultLaborer) {
+          setSelectedLaborer(defaultLaborer);
+        } else if (laborersData.length > 0) {
+          setSelectedLaborer(laborersData[0]);
+        }
         setTypes(typesRes.data ?? []);
         setBrands(brandsRes.data ?? []);
         setAvailableCables(cablesRes.data ?? []);
@@ -224,7 +257,7 @@ export default function CutList() {
   async function sendWhatsAppMessage(
     items: CutItem[],
   ) {
-    const phoneNumber = process.env.NEXT_PUBLIC_WHATSAPP_LABORER_PHONE;
+    const phoneNumber = selectedLaborer?.mobile_no;
     const response = await fetch("/api/whatsapp/send", {
       method: "POST",
       headers: {
@@ -251,6 +284,11 @@ export default function CutList() {
   const submitCuts = async () => {
     if (items.length === 0) {
       toast.error("Add at least one cable to cut.");
+      return;
+    }
+
+    if (!selectedLaborer) {
+      toast.error("Please select a laborer.");
       return;
     }
 
@@ -478,33 +516,70 @@ export default function CutList() {
             }}
           />
 
-          <CutListPanel
-            items={items}
-            transactionRef={transactionRef}
-            reservationIdInput={reservationIdInput}
-            isLoadingReservation={isLoadingReservation}
-            brands={brands}
-            types={types}
-            submitting={submitting}
-            onReservationIdChange={setReservationIdInput}
-            onFindReservation={handleFindReservation}
-            onTransactionRefChange={setTransactionRef}
-            onLengthChange={(cutVersion, value) =>
-              updateItem(cutVersion, { cutLength: value })
-            }
-            onRemoveItem={removeItem}
-            onSubmit={submitCuts}
-            onClear={() => {
-              setItems([]);
-              setSizeFilter("");
-              setTypeFilter("");
-              setBrandFilter(brands[0]?.id ? String(brands[0].id) : "");
-              setTransactionRef("");
-              setReservationIdInput("");
-            }}
-          />
+          <div>
+            <CutListPanel
+              items={items}
+              transactionRef={transactionRef}
+              reservationIdInput={reservationIdInput}
+              isLoadingReservation={isLoadingReservation}
+              brands={brands}
+              types={types}
+              submitting={submitting}
+              onReservationIdChange={setReservationIdInput}
+              onFindReservation={handleFindReservation}
+              onTransactionRefChange={setTransactionRef}
+              onLengthChange={(cutVersion, value) =>
+                updateItem(cutVersion, { cutLength: value })
+              }
+              onRemoveItem={removeItem}
+              onSubmit={submitCuts}
+              onClear={() => {
+                setItems([]);
+                setSizeFilter("");
+                setTypeFilter("");
+                setBrandFilter(brands[0]?.id ? String(brands[0].id) : "");
+                setTransactionRef("");
+                setReservationIdInput("");
+              }}
+            />
+
+            <div className="mt-4">
+              <LaborerDropdown
+                laborers={laborers}
+                selectedLaborer={selectedLaborer}
+                onLaborerChange={setSelectedLaborer}
+                onOpenSettings={() => setOpenLaborSettings(true)}
+              />
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Laborer Settings Modal */}
+      <LaborerSettings
+        isOpen={openLaborSettings}
+        onClose={() => setOpenLaborSettings(false)}
+        onLaborersUpdated={(updatedLaborers) => {
+          setLaborers(updatedLaborers);
+          // If current selection was deleted, select the default or first one
+          if (!updatedLaborers.find((l) => l.id === selectedLaborer?.id)) {
+            const defaultLaborer = updatedLaborers.find((l) => l.default);
+            setSelectedLaborer(
+              defaultLaborer || updatedLaborers[0] || null
+            );
+          } else {
+            // Update selected laborer if its properties changed (e.g., default status)
+            const updatedSelected = updatedLaborers.find(
+              (l) => l.id === selectedLaborer?.id
+            );
+            if (updatedSelected) {
+              setSelectedLaborer(updatedSelected);
+            }
+          }
+        }}
+  
+
+    />
     </div>
   );
 }
