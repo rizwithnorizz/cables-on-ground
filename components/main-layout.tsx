@@ -7,7 +7,7 @@ export function Layout( {
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex bg-[#080C14] text-white overflow-hidden">
+    <div className="min-h-screen flex bg-background text-foreground overflow-hidden dark:bg-[#080C14] dark:text-white">
       {/* Background elements */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-[#0047FF] opacity-[0.06] blur-[120px]" />

@@ -24,7 +24,7 @@ export function TransactionFilters({
     <>
       {/* Filter Inputs */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <label className="space-y-2 text-sm text-gray-300">
+        <label className="space-y-2 text-sm dark:text-gray-300">
           Search (Ref or Drum ID)
           <Input
             value={searchQuery}
@@ -32,7 +32,7 @@ export function TransactionFilters({
             placeholder="Search..."
           />
         </label>
-        <label className="space-y-2 text-sm text-gray-300">
+        <label className="space-y-2 text-sm dark:text-gray-300">
           From Date
           <Input
             type="date"
@@ -40,7 +40,7 @@ export function TransactionFilters({
             onChange={(e) => onFromDateChange(e.target.value)}
           />
         </label>
-        <label className="space-y-2 text-sm text-gray-300">
+        <label className="space-y-2 text-sm dark:text-gray-300">
           To Date
           <Input
             type="date"

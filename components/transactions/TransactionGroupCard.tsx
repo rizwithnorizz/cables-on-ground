@@ -73,12 +73,12 @@ export function TransactionGroupCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
-    <div className="bg-[#0b1220] border border-[#1f2937] rounded-lg p-4">
+    <div className="dark:bg-[#0b1220] border dark:border-[#1f2937] shadow-lg rounded-lg p-4">
       {/* Group Header */}
       <div className="grid grid-cols-1 gap-2 md:grid-cols-4 mb-4">
         {/* Reference Section */}
         <div>
-          <p className="text-xs text-gray-500 uppercase">Reference</p>
+          <p className="text-xs dark:text-gray-500 uppercase">Reference</p>
           {isEditing ? (
             <div className="flex gap-2 mt-2">
               <Input
@@ -116,7 +116,7 @@ export function TransactionGroupCard({
                     <Edit size={14} />
                   </button>
                 )}
-                <p className="text-sm font-semibold text-white">
+                <p className="text-sm font-semibold dark:text-white">
                   {group.ref_no || <span className="text-gray-500">—</span>}
                 </p>
               </div>
@@ -126,16 +126,16 @@ export function TransactionGroupCard({
 
         {/* Total Length */}
         <div>
-          <p className="text-xs text-gray-500 uppercase">Total Length</p>
-          <p className="text-sm font-semibold text-white mt-2">
+          <p className="text-xs dark:text-gray-500 uppercase">Total Length</p>
+          <p className="text-sm font-semibold dark:text-white mt-2">
             {group.totalLength.toFixed(2)} m
           </p>
         </div>
 
         {/* Date Range */}
         <div>
-          <p className="text-xs text-gray-500 uppercase">Date Range</p>
-          <p className="text-sm font-semibold text-white mt-2">
+          <p className="text-xs dark:text-gray-500 uppercase">Date Range</p>
+          <p className="text-sm font-semibold dark:text-white mt-2">
             {group.minDate === group.maxDate
               ? group.minDate
               : `${group.minDate} to ${group.maxDate}`}
@@ -148,7 +148,7 @@ export function TransactionGroupCard({
             <button
               onClick={() => onDownload(group, idx)}
               disabled={isDownloading}
-              className="flex items-center justify-center gap-1 px-2 w-1/2 py-1 rounded text-xs bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition"
+              className="flex items-center justify-center gap-1 px-2 w-1/2 py-1 rounded text-xs text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition"
               title="Download all certificates as zip"
             >
               <Download size={12} />

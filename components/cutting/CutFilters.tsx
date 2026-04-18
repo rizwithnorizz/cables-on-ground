@@ -35,18 +35,18 @@ export function CutFilters({
   return (
     <div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 mb-5">
-        <label className="space-y-2 text-sm text-gray-300">
+        <label className="space-y-2 text-sm text-muted-foreground dark:text-gray-300">
           Brand
           <select
             value={brandFilter}
             onChange={(e) => onBrandChange(e.target.value)}
-            className="w-full rounded-md border border-input bg-[#0b1220] px-3 py-2 text-base text-white"
+            className="w-full rounded-md border border-input dark:bg-[#0b1220] px-3 py-2 text-base dark:text-white text-black"
           >
             {brands.map((b) => (
               <option
                 key={b.id}
                 value={String(b.id)}
-                className="bg-[#0b1220] text-white"
+                className="dark:bg-[#0b1220] dark:text-white"
               >
                 {b.brand_name}
               </option>
@@ -54,19 +54,19 @@ export function CutFilters({
           </select>
         </label>
 
-        <label className="space-y-2 text-sm text-gray-300">
+        <label className="space-y-2 text-sm dark:text-gray-300">
           Type
           <select
             value={typeFilter}
             onChange={(e) => onTypeChange(e.target.value)}
-            className="w-full rounded-md border border-input bg-[#0b1220] px-3 py-2 text-base text-white"
+            className="w-full rounded-md border border-input dark:bg-[#0b1220] px-3 py-2 text-base dark:text-white text-black"
           >
             <option value="">Select type</option>
             {types.map((t) => (
               <option
                 key={t.id}
                 value={String(t.id)}
-                className="bg-[#0b1220] text-white"
+                className="dark:bg-[#0b1220] dark:text-white"
               >
                 {t.type_name}
               </option>
@@ -75,11 +75,11 @@ export function CutFilters({
         </label>
       </div>
 
-      <label className="space-y-2 text-sm text-gray-300">
+      <label className="space-y-2 text-sm dark:text-gray-300">
         Size
         <div className="mt-2 grid grid-cols-4 gap-2">
           {availableSizes.length === 0 ? (
-            <div className="text-sm text-gray-500">No sizes available</div>
+            <div className="text-sm text-muted-foreground dark:text-gray-500">No sizes available</div>
           ) : (
             availableSizes
               .sort((a, b) => {
@@ -93,8 +93,8 @@ export function CutFilters({
                   onClick={() => onSizeChange(s)}
                   className={`px-3 py-3 rounded ${
                     sizeFilter === s
-                      ? "bg-emerald-500 text-white"
-                      : "bg-[#1b263b] text-gray-300"
+                      ? "bg-green-400 text-white"
+                      : "bg-secondary dark:bg-[#1b263b]  dark:text-gray-300"
                   }`}
                 >
                   {s}
@@ -105,7 +105,7 @@ export function CutFilters({
       </label>
 
       <div className="mb-4">
-        <label className="space-y-2 text-sm text-gray-300">
+        <label className="space-y-2 text-sm dark:text-gray-300">
           Length to cut (m)
           <Input
             type="number"

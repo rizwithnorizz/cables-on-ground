@@ -319,14 +319,14 @@ export default function TransactionsList() {
   return (
     <div className="p-8 mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">Transactions</h1>
+        <h1 className="text-3xl font-bold text-blue-500 dark:text-white">Transactions</h1>
         <p className="mt-2 text-gray-400">
           View and search all cable cutting transactions grouped by reference
           number.
         </p>
       </div>
 
-      <div className="space-y-6 bg-[#111827]/80 border border-[#0047FF]/30 rounded-3xl p-8 shadow-lg shadow-[#0047FF]/10">
+      <div className="space-y-6 dark:bg-[#111827]/80 border dark:border-[#0047FF]/30 rounded-3xl p-8 shadow-lg dark:shadow-[#0047FF]/10">
         {/* Filters */}
         <TransactionFilters
           searchQuery={searchQuery}
@@ -344,11 +344,11 @@ export default function TransactionsList() {
 
         {/* Results */}
         {loading ? (
-          <div className="text-center text-gray-400">
+          <div className="text-center dark:text-gray-400">
             Loading transactions...
           </div>
         ) : groupedTransactions.length === 0 ? (
-          <div className="text-center text-gray-400">
+          <div className="text-center dark:text-gray-400">
             No transactions found.
           </div>
         ) : (

@@ -23,32 +23,32 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-[#1f2937]">
-            <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+          <tr className="border-b dark:border-[#1f2937]">
+            <th className="text-left px-2 py-2 text-xs font-semibold dark:text-gray-400">
               Drum ID
             </th>
-            <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+            <th className="text-left px-2 py-2 text-xs font-semibold dark:text-gray-400">
               Brand
             </th>
-            <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+            <th className="text-left px-2 py-2 text-xs font-semibold dark:text-gray-400">
               Type
             </th>
-            <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+            <th className="text-left px-2 py-2 text-xs font-semibold dark:text-gray-400">
               Size
             </th>
-            <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+            <th className="text-left px-2 py-2 text-xs font-semibold dark:text-gray-400">
               Original Length (m)
             </th>
-            <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+            <th className="text-left px-2 py-2 text-xs font-semibold dark:text-gray-400">
               Length Cut (m)
             </th>
-            <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+            <th className="text-left px-2 py-2 text-xs font-semibold dark:text-gray-400">
               Balance (m)
             </th>
-            <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+            <th className="text-left px-2 py-2 text-xs font-semibold dark:text-gray-400">
               Date
             </th>
-            <th className="text-left px-2 py-2 text-xs font-semibold text-gray-400">
+            <th className="text-left px-2 py-2 text-xs font-semibold dark:text-gray-400">
               Test Certificate
             </th>
           </tr>
@@ -57,37 +57,37 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
           {transactions.map((tx) => (
             <tr
               key={tx.id}
-              className="border-b border-[#0b1220] hover:bg-[#111827] transition"
+              className="border-b dark:border-[#0b1220] hover:bg-blue-200 dark:hover:bg-[#111827] transition "
             >
-              <td className="px-2 py-2 text-white">
+              <td className="px-2 py-2 dark:text-white">
                 {tx.drum_id.drum_id ? (
                   tx.drum_id.drum_id
                 ) : (
-                  <span className="text-gray-500">
+                  <span className="dark:text-gray-500">
                     Unavailable Drum Number
                   </span>
                 )}
               </td>
-              <td className="px-2 py-2 text-white">
+              <td className="px-2 py-2 dark:text-white">
                 {tx.drum_id.brand.brand_name}
               </td>
-              <td className="px-2 py-2 text-white">
+              <td className="px-2 py-2 dark:text-white">
                 {tx.drum_id.type.type_name}
               </td>
-              <td className="px-2 py-2 text-white">
+              <td className="px-2 py-2 dark:text-white">
                 {tx.drum_id.size}
               </td>
 
-              <td className="px-2 py-2 text-white">
+              <td className="px-2 py-2 dark:text-white">
                 {tx.balance_cable + tx.length_cut} METERS
               </td>
-              <td className="px-2 py-2 text-white">
+              <td className="px-2 py-2 dark:text-white">
                 {tx.length_cut} METERS
               </td>
-              <td className="px-2 py-2 text-white">
+              <td className="px-2 py-2 dark:text-white">
                 {tx.balance_cable} METERS
               </td>
-              <td className="px-2 py-2 text-gray-400">
+              <td className="px-2 py-2 dark:text-gray-400">
                 {new Date(tx.created_at).toLocaleDateString(undefined, {
                   year: "numeric",
                   month: "short",
@@ -102,7 +102,7 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
                     href={tx.drum_id.testcertificate}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-400 hover:underline"
+                    className="dark:text-blue-400 text-blue-800 hover:underline"
                   >
                     View Certificate
                   </a>

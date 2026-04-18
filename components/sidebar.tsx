@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LogoutButton } from './logout-button';
+import { ThemeSwitcher } from './theme-switcher';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';  
@@ -31,7 +32,7 @@ const allSidebarItems: SidebarItem[] = [
 
 const publicSidebarItems: SidebarItem[] = [
   { label: 'Cables View', href: '/cables_view' },
-  { label: 'Reservations', href: '/reservations' },
+  { label: 'Reservations', href: '/reservations' }, 
 ];
 
 export function Sidebar() {
@@ -75,7 +76,7 @@ export function Sidebar() {
 
  if (loading) {
     return (
-      <aside className="fixed left-0 top-0 h-screen w-64 bg-[#0a0e1a] border-r border-[#1a1f3a] flex flex-col p-6 overflow-y-auto z-50">
+      <aside className="fixed left-0 top-0 h-screen w-64 bg-card dark:bg-[#0a0e1a] border-r border-border dark:border-[#1a1f3a] flex flex-col p-6 overflow-y-auto z-50">
         <div className="mb-8">
           <h1 className="text-xl font-bold bg-gradient-to-r from-[#0047FF] to-[#00C8FF] bg-clip-text text-transparent">
             Cables on Ground
@@ -90,7 +91,7 @@ export function Sidebar() {
       {/* Hamburger Menu Button - Hidden on Medium and Above */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="sm:hidden fixed bottom-6 left-6 z-50 p-2 rounded-lg bg-[#1a1f3a] text-white hover:bg-[#2a2f4a] transition-colors"
+        className="sm:hidden fixed bottom-6 left-6 z-50 p-2 rounded-lg bg-secondary dark:bg-[#1a1f3a] text-foreground dark:text-white hover:bg-accent dark:hover:bg-[#2a2f4a] transition-colors"
         aria-label="Toggle sidebar"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -107,7 +108,7 @@ export function Sidebar() {
       )}
 
       {/* Sidebar - Hidden on Small, Visible on Medium and Above */}
-      <aside className={`fixed left-0 top-0 h-screen w-64 bg-[#0a0e1a] border-r border-[#1a1f3a] flex flex-col p-6 overflow-y-auto z-50 transition-transform duration-300 md:translate-x-0 ${
+      <aside className={`fixed left-0 top-0 h-screen w-64 bg-card dark:bg-[#0a0e1a] border-r border-border dark:border-[#1a1f3a] flex flex-col p-6 overflow-y-auto z-50 transition-transform duration-300 md:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } `}>
         {/* Logo/Brand */}
@@ -128,8 +129,8 @@ export function Sidebar() {
                 onClick={() => setSidebarOpen(false)}
                 className={`block px-4 py-3 rounded-lg transition-all duration-200 ${
                   isActive
-                    ? 'bg-gradient-to-r from-[#0047FF] to-[#00C8FF] text-white shadow-lg shadow-[#0047FF]/20'
-                    : 'text-gray-400 hover:text-white hover:bg-[#1a1f3a]'
+                    ? 'dark:bg-[#0047FF] bg-[#52aaed]  text-white shadow-lg shadow-[#0047FF]/20'
+                    : 'text-muted-foreground dark:text-gray-400 hover:text-foreground dark:hover:text-white hover:bg-secondary dark:hover:bg-[#1a1f3a]'
                 }`}
               >
                 {item.label}
@@ -139,15 +140,18 @@ export function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className=" pt-4 border-t border-[#1a1f3a] space-y-3">
-          {isAuthenticated ? (
-            <LogoutButton className="w-full text-gray-400 hover:text-white hover:bg-[#1a1f3a] bg-transparent" />
-          ) : (
-            <Button asChild className="w-full bg-gradient-to-r from-[#0047FF] to-[#00C8FF] text-white hover:shadow-lg hover:shadow-[#0047FF]/20">
-              <Link href="/auth/login">Login</Link>
-            </Button>
-          )}
-          <p className="text-xs text-gray-500">© 2026 Cables</p>
+        <div className=" pt-4 border-t border-border dark:border-[#1a1f3a] space-y-3">
+          <div className="flex gap-2 justify-between">
+            {isAuthenticated ? (
+              <LogoutButton className="flex-1 text-muted-foreground dark:text-gray-400 hover:text-foreground dark:hover:text-white hover:bg-secondary dark:hover:bg-[#1a1f3a] bg-transparent" />
+            ) : (
+              <Button asChild className="flex-1 bg-gradient-to-r from-[#0047FF] to-[#00C8FF] text-white hover:shadow-lg hover:shadow-[#0047FF]/20">
+                <Link href="/auth/login">Login</Link>
+              </Button>
+            )}
+            <ThemeSwitcher />
+          </div>
+          <p className="text-xs text-muted-foreground dark:text-gray-500">© 2026 Cables</p>
         </div>
       </aside>
     </>

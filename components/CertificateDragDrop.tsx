@@ -53,7 +53,7 @@ export function CertificateDragDrop({
   };
 
   return (
-    <label className="space-y-2 text-sm text-gray-300">
+    <label className="space-y-2 text-sm dark:text-gray-300">
       Certificate (optional)
       <div
         onDragOver={handleDragOver}

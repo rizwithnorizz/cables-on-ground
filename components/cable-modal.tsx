@@ -485,15 +485,15 @@ export default function CableModal({
     <div className="fixed md:ml-64 inset-0 flex items-center justify-center z-[999]">
       <div className="absolute inset-0 bg-black/60" onClick={() => { onClose(); setShowSmallCableSelector(false);}} />
 
-      <div className="relative z-10 w-full max-w-5xl mx-4 bg-[#0f1724] rounded-2xl border border-[#0047FF]/30 p-6 shadow-lg flex gap-6 max-h-[85vh] overflow-hidden">
+      <div className="relative z-10 w-full max-w-5xl mx-4 bg-white dark:bg-[#0f1724] rounded-2xl border dark:border-[#0047FF]/30 border-gray-200 p-6 shadow-lg dark:shadow-lg flex gap-6 max-h-[85vh] overflow-hidden">
         {/* Left column */}
         <div className="w-2/3 overflow-y-auto pr-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-200">
+              <h2 className="text-xl font-semibold dark:text-gray-200">
                 {cable.drum_id}
               </h2>
-              <div className="text-sm text-gray-400">
+              <div className="text-sm dark:text-gray-400">
                 {brandName ?? "Unknown brand"} · {typeName ?? "Unknown type"}
               </div>
             </div>
@@ -510,7 +510,7 @@ export default function CableModal({
               )}
               <button
                 onClick={() => { onClose(); setShowSmallCableSelector(false);}} 
-                className="text-gray-300 px-2 py-1 rounded hover:bg-white/5"
+                className="dark:text-gray-300 px-2 py-1 rounded hover:bg-white/5"
               >
                 ✕
               </button>
@@ -518,13 +518,13 @@ export default function CableModal({
           </div>
 
           <div className="mt-6 flex flex-col gap-4">
-            <div className="bg-[#1a1f3a] p-4 rounded-lg border border-[#0047FF]/10">
+            <div className="bg-gray-100 dark:bg-[#1a1f3a] p-4 rounded-lg border dark:border-[#0047FF]/10 border-gray-300">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-400">Remaining Length</div>
+                <div className="text-sm text-gray-700 dark:text-gray-400">Remaining Length</div>
                 {user && !isEditing && (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="text-xs text-[#00C8FF] hover:underline"
+                    className="text-xs dark:text-[#00C8FF] hover:underline"
                   >
                     Edit
                   </button>
@@ -537,24 +537,24 @@ export default function CableModal({
                       type="number"
                       value={editedCurrLength}
                       onChange={(e) => setEditedCurrLength(parseFloat(e.target.value) || 0)}
-                      className="bg-[#0b1220] text-3xl font-bold text-gray-100 border border-[#0047FF]/30 rounded px-2 py-1 w-32"
+                      className="bg-gray-50 dark:bg-[#0b1220] text-3xl font-bold text-gray-900 dark:text-gray-100 border dark:border-[#0047FF]/30 border-gray-300 rounded px-2 py-1 w-32"
                     />
-                    <span className="text-3xl font-bold text-gray-100">m</span>
+                    <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">m</span>
                   </div>
                 ) : (
-                  <div className="text-3xl font-bold text-gray-100">
+                  <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                     {cable.curr_length}m
                   </div>
                 )}
               </div>
-              <div className="w-full bg-[#0b1220] h-3 rounded-full mt-3">
+              <div className="w-full bg-gray-300 dark:bg-[#0b1220] h-3 rounded-full mt-3">
                 <div
                   className="h-3 rounded-full bg-emerald-500"
                   style={{ width: `${100 - (editedInitialLength > 0 ? Math.min(100, Math.round(((editedInitialLength - editedCurrLength) / editedInitialLength) * 100)) : 0)}%` }}
                 />
               </div>
               <div className="flex justify-between">
-                <div className="text-sm text-gray-400 mt-1">
+                <div className="text-sm dark:text-gray-400 mt-1">
                   {editedInitialLength > 0 ? Math.min(100, Math.round(((editedInitialLength - editedCurrLength) / editedInitialLength) * 100)) : 0}% used
                 </div>
                 {isEditing ? (
@@ -568,7 +568,7 @@ export default function CableModal({
                     <span className="text-sm text-gray-400">m initial</span>
                   </div>
                 ) : (
-                  <div className="text-sm text-gray-400">
+                  <div className="text-sm dark:text-gray-400 font-semibold">
                     {cable.initial_length}m initial
                   </div>
                 )}
@@ -595,10 +595,10 @@ export default function CableModal({
 
             <div className="space-y-3">
               {isEditingDetails ? (
-                <div className="space-y-3 bg-[#1a1f3a] p-4 rounded-lg border border-[#0047FF]/10">
+                <div className="space-y-3 bg-gray-100 dark:bg-[#1a1f3a] p-4 rounded-lg border dark:border-[#0047FF]/10 border-gray-300">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="text-sm">
-                      <label className="text-xs text-gray-400 block mb-1"># Drum No.</label>
+                      <label className="text-xs text-gray-700 dark:text-gray-400 block mb-1"># Drum No.</label>
                       <input
                         type="text"
                         value={editedDrumId}
@@ -668,7 +668,7 @@ export default function CableModal({
               ) : (
                 <>
                   <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-semibold text-gray-200">Cable Details</h4>
+                    <h4 className="text-sm font-semibold dark:text-gray-200">Cable Details</h4>
                     {user && (
                       <button
                         onClick={() => setIsEditingDetails(true)}
@@ -679,34 +679,34 @@ export default function CableModal({
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-[#1a1f3a] p-3 rounded-lg border border-[#0047FF]/10 text-sm">
-                      <div className="text-xs text-gray-400"># Drum No.</div>
-                      <div className="font-medium text-gray-100">
+                    <div className="dark:bg-[#1a1f3a] p-3 rounded-lg border border-[#0047FF]/10 text-sm">
+                      <div className="text-xs dark:text-gray-400"># Drum No.</div>
+                      <div className="font-medium dark:text-gray-100">
                         {cable.drum_id}
                       </div>
                     </div>
-                    <div className="bg-[#1a1f3a] p-3 rounded-lg border border-[#0047FF]/10 text-sm">
-                      <div className="text-xs text-gray-400">Brand</div>
-                      <div className="font-medium text-gray-100">
+                    <div className="dark:bg-[#1a1f3a] p-3 rounded-lg border border-[#0047FF]/10 text-sm">
+                      <div className="text-xs dark:text-gray-400">Brand</div>
+                      <div className="font-medium dark:text-gray-100">
                         {brandName ?? "-"}
                       </div>
                     </div>
-                    <div className="bg-[#1a1f3a] p-3 rounded-lg border border-[#0047FF]/10 text-sm">
-                      <div className="text-xs text-gray-400">Cable Type</div>
-                      <div className="font-medium text-gray-100">
+                    <div className="dark:bg-[#1a1f3a] p-3 rounded-lg border border-[#0047FF]/10 text-sm">
+                      <div className="text-xs dark:text-gray-400">Cable Type</div>
+                      <div className="font-medium dark:text-gray-100">
                         {typeName ?? "-"}
                       </div>
                     </div>
-                    <div className="bg-[#1a1f3a] p-3 rounded-lg border border-[#0047FF]/10 text-sm">
-                      <div className="text-xs text-gray-400">Size</div>
-                      <div className="font-medium text-gray-100">{cable.size}</div>
+                    <div className="dark:bg-[#1a1f3a] p-3 rounded-lg border border-[#0047FF]/10 text-sm">
+                      <div className="text-xs dark:text-gray-400">Size</div>
+                      <div className="font-medium dark:text-gray-100">{cable.size}</div>
                     </div>
                   </div>
                 </>
               )}
 
-              <div className="bg-[#1a1f3a] p-3 rounded-lg border border-[#0047FF]/10 text-sm">
-                <div className="text-xs text-gray-400">Test Certificate</div>
+              <div className="dark:bg-[#1a1f3a] p-3 rounded-lg border border-[#0047FF]/10 text-sm">
+                <div className="text-xs dark:text-gray-400">Test Certificate</div>
                 <div className="mt-2">
                   {showSmallCableSelector ? (
                     <div className="space-y-3">
@@ -722,7 +722,7 @@ export default function CableModal({
                             value={selectedSmallCableId?.toString() ?? ""}
                             onChange={(e) => setSelectedSmallCableId(e.target.value)}
                             disabled={isCopyingCert}
-                            className="w-full bg-[#0b1220] text-gray-100 border border-[#0047FF]/30 rounded px-2 py-2 text-sm disabled:opacity-50"
+                            className="w-full dark:bg-[#0b1220] dark:text-gray-100 border border-[#0047FF]/30 rounded px-2 py-2 text-sm disabled:opacity-50"
                           >
                             <option value="">Select a test certificate</option>
                             {smallCables.map((smallCable) => (
@@ -811,7 +811,7 @@ export default function CableModal({
                         className={`block w-full cursor-pointer rounded border-dashed border-2 p-4 text-center transition-colors ${
                           isDraggingCert
                             ? "border-[#0047FF] bg-[#0047FF]/10 text-gray-300"
-                            : "border-[#0047FF]/20 text-gray-400 hover:border-[#0047FF]/40"
+                            : "border-[#0047FF]/20 black:text-gray-400 hover:border-[#0047FF]/40"
                         }`}
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
@@ -833,7 +833,7 @@ export default function CableModal({
                       <button
                         onClick={fetchSmallCablesWithSameCriteria}
                         disabled={loadingSmallCables}
-                        className="w-full bg-[#0047FF]/30 text-gray-300 px-3 py-2 rounded text-sm font-medium hover:bg-[#0047FF]/50 disabled:opacity-50 transition"
+                        className="w-full bg-[#0047FF] text-white dark:bg-[#0047FF]/30 dark:text-gray-300 px-3 py-2 rounded text-sm font-medium hover:bg-[#0047FF]/50 disabled:opacity-50 transition"
                       >
                         {loadingSmallCables ? "Loading..." : "Select Test Certificate"}
                       </button>
@@ -870,14 +870,14 @@ export default function CableModal({
 
         {/* Right column: Transaction history */}
         <div className="w-1/2 border-l border-[#ffffff0a] pl-6 overflow-y-auto max-h-[65vh]">
-          <h3 className="text-lg font-semibold text-gray-100">
+          <h3 className="text-lg font-semibold black:text-gray-100">
             Transaction History
           </h3>
           <div className="mt-4 space-y-4">
             {loading ? (
-              <div className="text-sm text-gray-400">Loading…</div>
+              <div className="text-sm dark:text-gray-400">Loading…</div>
             ) : transactions.length === 0 ? (
-              <div className="text-sm text-gray-400">No transactions</div>
+              <div className="text-sm dark:text-gray-400">No transactions</div>
             ) : (
               <ul className="space-y-4 divide-y">
                 {transactions.map((t) => {

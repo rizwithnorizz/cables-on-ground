@@ -181,56 +181,53 @@ export default function NewDrumForm() {
   return (
     <div className="p-8 max-w-4xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">Add New Drum</h1>
-        <p className="mt-2 text-gray-400">
-          Create a new drum entry and link it to an existing type and brand.
-        </p>
+        <h1 className="text-3xl font-bold dark:text-white text-blue-500">Add New Drum</h1>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-6 bg-[#111827]/80 border border-[#0047FF]/30 rounded-3xl p-8 shadow-lg shadow-[#0047FF]/10"
+        className="space-y-6 dark:bg-[#111827]/80 border dark:border-[#0047FF]/30 rounded-3xl p-8 shadow-lg dark:shadow-[#0047FF]/10"
       >
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <label className="space-y-2 text-sm text-gray-300">
+          <label className="space-y-2 text-sm dark:text-gray-300">
             Brand
             <select
               value={brandId}
               onChange={(e) => setBrandId(e.target.value)}
               disabled={loading}
-              className="w-full rounded-md border border-input bg-[#0b1220] px-3 py-2 text-base text-white shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="w-full rounded-md border border-input dark:bg-[#0b1220] px-3 py-2 text-base dark:text-white shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               {brands.map((brand) => (
                 <option
                   key={brand.id}
                   value={String(brand.id)}
-                  className="bg-[#0b1220] text-white"
+                  className="dark:bg-[#0b1220] dark:text-white"
                 >
                   {brand.brand_name}
                 </option>
               ))}
             </select>
           </label>
-          <label className="space-y-2 text-sm text-gray-300">
+          <label className="space-y-2 text-sm dark:text-gray-300">
             Type
             <select
               value={typeId}
               onChange={(e) => setTypeId(e.target.value)}
               disabled={loading}
-              className="w-full rounded-md border border-input bg-[#0b1220] px-3 py-2 text-base text-white shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="w-full rounded-md border border-input dark:bg-[#0b1220] px-3 py-2 text-base dark:text-white shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               {types.map((type) => (
                 <option
                   key={type.id}
                   value={String(type.id)}
-                  className="bg-[#0b1220] text-white"
+                  className="dark:bg-[#0b1220] dark:text-white"
                 >
                   {type.type_name}
                 </option>
               ))}
             </select>
           </label>
-          <label className="space-y-2 text-sm text-gray-300">
+          <label className="space-y-2 text-sm dark:text-gray-300">
             Size
             <Input
               list="size-suggestions"
@@ -252,7 +249,7 @@ export default function NewDrumForm() {
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <label className="space-y-2 text-sm text-gray-300 md:col-span-2">
+          <label className="space-y-2 text-sm dark:text-gray-300 md:col-span-2">
             Drum ID
             <Input
               value={drumId}
@@ -261,7 +258,7 @@ export default function NewDrumForm() {
             />
           </label>
 
-          <label className="space-y-2 text-sm text-gray-300">
+          <label className="space-y-2 text-sm dark:text-gray-300">
             Initial Length
             <Input
               value={initialLength}
@@ -271,7 +268,7 @@ export default function NewDrumForm() {
             />
           </label>
           
-          <label className="space-y-2 text-sm text-gray-300">
+          <label className="space-y-2 text-sm dark:text-gray-300">
             Current Length
             <Input
               value={currLength}

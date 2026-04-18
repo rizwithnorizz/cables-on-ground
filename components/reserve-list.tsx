@@ -261,13 +261,13 @@ export default function ReserveList() {
   return (
     <div className="p-8 mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">Reserve</h1>
-        <p className="mt-2 text-gray-400">
+        <h1 className="text-3xl font-bold dark:text-white text-blue-500">Reserve</h1>
+        <p className="mt-2 text-gray-400 dark:text-gray-400">
           Select cables to reserve. Filters limit available brands, types and sizes.
         </p>
       </div>
 
-      <div className="space-y-6 bg-[#111827]/80 border border-[#0047FF]/30 rounded-3xl p-8 shadow-lg shadow-[#0047FF]/10">
+      <div className="space-y-6 bg-card dark:bg-[#111827]/80 border border-[#0047FF]/30 rounded-3xl p-8 shadow-lgshadow-[#0047FF]/10">
         {/* Notifications are shown via react-hot-toast */}
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -310,8 +310,8 @@ export default function ReserveList() {
                 return;
               }
 
-              if (L > (drum.curr_length ?? 0)) {
-                toast.error(`Reserve length exceeds available length on this drum (${drum.curr_length}m)`);
+              if (L > (drum.available ?? 0)) {
+                toast.error(`Reserve length exceeds available length on this drum (${drum.available}m)`);
                 return;
               }
 

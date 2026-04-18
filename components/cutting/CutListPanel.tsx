@@ -6,6 +6,7 @@ type CutItem = {
   id: string;
   size: string;
   type: number;
+  brand: number;
   drum_id: string;
   available: number;
   cutLength: string;
@@ -47,19 +48,19 @@ export function CutListPanel({
   onClear,
 }: CutListPanelProps) {
   const brandMap = Object.fromEntries(
-    brands.map((b) => [String(b.id), b.brand_name])
+    brands.map((b) => [b.id, b.brand_name])
   );
   const typeMap = Object.fromEntries(
     types.map((t) => [String(t.id), t.type_name])
   );
 
   return (
-    <div className="bg-[#071025] border border-[#0b1220] rounded-md p-4">
-      <h3 className="text-sm font-semibold text-white mb-2">Cut List</h3>
+    <div className="bg-secondary dark:bg-[#071025] border border-gray-200 dark:border-[#0b1220] rounded-md p-4">
+      <h3 className="text-sm font-semibold text-foreground dark:text-white mb-2">Cut List</h3>
       
       {/* Reservation Input Section */}
-      <div className="mb-3 p-2 bg-[#0047FF]/10 border border-[#0047FF]/30 rounded text-sm text-gray-300">
-        <label className="space-y-2 text-sm text-gray-300 mb-3 w-full">
+      <div className="mb-3 p-2 bg-[#0047FF]/10 border border-[#0047FF]/30 rounded text-sm text-muted-foreground dark:text-gray-300">
+        <label className="space-y-2 text-sm text-black dark:text-gray-300 mb-3 w-full">
           Enter Reservation ID
           <div className="flex gap-2">
             <Input
@@ -85,7 +86,7 @@ export function CutListPanel({
       </div>
 
       {/* Reference Input */}
-      <label className="space-y-2 text-sm text-gray-300 mb-3">
+      <label className="space-y-2 text-sm dark:text-gray-300 mb-3">
         Reference
         <Input
           className="mb-3"
@@ -102,9 +103,10 @@ export function CutListPanel({
         <div className="space-y-3 mb-4 max-h-[380px] overflow-auto">
           {items.map((item) => (
             <CutListItem
+            
               key={item.cut_version}
               item={item}
-              brandName={brandMap[String(item.type)] || "Unknown"}
+              brandName={brandMap[item.brand] || "Unknown"}
               typeName={typeMap[String(item.type)] || "Unknown"}
               onLengthChange={(value) =>
                 onLengthChange(item.cut_version, value)
@@ -120,7 +122,7 @@ export function CutListPanel({
         <Button
           onClick={onSubmit}
           disabled={submitting || items.length === 0}
-          className="flex-1"
+          className="flex-1 bg-orange-600 text-white"
         >
           {submitting ? "Submitting…" : "Submit Cuts"}
         </Button>

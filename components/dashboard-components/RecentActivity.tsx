@@ -16,11 +16,11 @@ type RecentActivityProps = {
 
 export function RecentActivity({ activities }: RecentActivityProps) {
   return (
-    <div className="bg-[#111827]/80 border border-[#0047FF]/30 rounded-lg p-6 shadow-lg shadow-[#0047FF]/10">
+    <div className="bg-white dark:bg-[#111827]/80 border dark:border-[#0047FF]/30 border-gray-200 rounded-lg p-6 shadow-lg dark:shadow-[#0047FF]/10">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-lg font-semibold text-white">Recent Activity</h2>
+        <h2 className="text-lg font-semibold text-foreground dark:text-white">Recent Activity</h2>
         <Link href="/transactions">
-          <p className="text-[#00C8FF] text-sm font-medium hover:text-[#0047FF] transition-colors">
+          <p className="text-blue-500 dark:text-[#00C8FF] text-sm font-medium hover:text-blue-600 dark:hover:text-[#0047FF] transition-colors">
             View all
           </p>
         </Link>

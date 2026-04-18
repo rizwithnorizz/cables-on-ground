@@ -53,21 +53,18 @@ export function ReserveListPanel({
   );
 
   return (
-    <div className="bg-[#071025] border border-[#0b1220] rounded-md p-4">
-      <h3 className="text-sm font-semibold text-white mb-2">Reserve List</h3>
+    <div className="bg-secondary dark:bg-[#071025] border border-gray-200 dark:border-[#0b1220] rounded-md p-4">
+      <h3 className="text-sm font-semibold text-foreground dark:text-white mb-2">Reserve List</h3>
 
       {/* Reservation ID Display */}
-      <div className="mb-3 p-2 bg-[#0047FF]/10 border border-[#0047FF]/30 rounded text-sm text-gray-300">
-        <label className="space-y-2 text-sm text-gray-300 mb-3 w-full">
-          Reservation ID
-          <div className="font-semibold text-white">
-            {nextReservationId ?? "—"}
-          </div>
+      <div className="mb-3 p-2 bg-[#0047FF]/10 border border-[#0047FF]/30 rounded text-sm text-muted-foreground dark:text-gray-300">
+        <label className="flex text-sm text-black dark:text-gray-300 w-full">
+          Reservation ID:  <p className="font-semibold ml-2 dark:text-white"> {nextReservationId ?? "—"} </p>
         </label>
       </div>
 
       {/* Reference Input */}
-      <label className="space-y-2 text-sm text-gray-300 mb-3">
+      <label className="space-y-2 text-sm dark:text-gray-300 mb-3">
         Reference
         <Input
           className="mb-3"
@@ -102,7 +99,7 @@ export function ReserveListPanel({
         <Button
           onClick={onSubmit}
           disabled={submitting || items.length === 0}
-          className="flex-1"
+          className="flex-1 bg-orange-700"
         >
           {submitting ? "Submitting…" : "Submit Reservations"}
         </Button>

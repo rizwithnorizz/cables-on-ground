@@ -5,7 +5,6 @@ import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase/client";
 import { CutFilters, CutListPanel } from "./cutting";
 
-
 type DrumCable = {
   id: string;
   drum_id: string;
@@ -20,6 +19,7 @@ type CutItem = {
   id: string;
   size: string;
   type: number;
+  brand: number;
   drum_id: string;
   available: number;
   cutLength: string;
@@ -50,7 +50,9 @@ export default function CutList() {
 
   const [items, setItems] = useState<CutItem[]>([]);
   const nextVersion = useRef(1);
-  const [addedDisabled, setAddedDisabled] = useState<Record<string, boolean>>({});
+  const [addedDisabled, setAddedDisabled] = useState<Record<string, boolean>>(
+    {},
+  );
   const timeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
   const [transactionRef, setTransactionRef] = useState("");
   const [reservationIdInput, setReservationIdInput] = useState<string>("");
@@ -59,7 +61,9 @@ export default function CutList() {
   // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
-      Object.values(timeoutRef.current).forEach(timeout => clearTimeout(timeout));
+      Object.values(timeoutRef.current).forEach((timeout) =>
+        clearTimeout(timeout),
+      );
       timeoutRef.current = {};
     };
   }, []);
@@ -152,6 +156,7 @@ export default function CutList() {
                 id: cable.id,
                 size: cable.size,
                 type: cable.type,
+                brand: cable.brand,
                 drum_id: cable.drum_id,
                 available: cable.curr_length,
                 cutLength: String(res.length),
@@ -187,6 +192,7 @@ export default function CutList() {
         id: cable.id,
         size: cable.size,
         type: cable.type,
+        brand: cable.brand,
         drum_id: cable.drum_id,
         available: cable.curr_length,
         cutLength: cutLen ?? "",
@@ -195,12 +201,12 @@ export default function CutList() {
       },
     ]);
     setAddedDisabled((prev) => ({ ...prev, [id]: true }));
-    
+
     // Clear previous timeout if exists
     if (timeoutRef.current[id]) {
       clearTimeout(timeoutRef.current[id]);
     }
-    
+
     // Store new timeout for cleanup on unmount
     timeoutRef.current[id] = setTimeout(() => {
       setAddedDisabled((prev) => ({ ...prev, [id]: false }));
@@ -214,6 +220,33 @@ export default function CutList() {
     setItems((prev) =>
       prev.map((i) => (i.cut_version === cut_version ? { ...i, ...patch } : i)),
     );
+
+  async function sendWhatsAppMessage(
+    items: CutItem[],
+  ) {
+    const phoneNumber = process.env.NEXT_PUBLIC_WHATSAPP_LABORER_PHONE;
+    const response = await fetch("/api/whatsapp/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        transactionRef,
+        phoneNumber,
+        items,
+        brands,
+        types,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to send WhatsApp message");
+    }
+
+    return data;
+  }
 
   const submitCuts = async () => {
     if (items.length === 0) {
@@ -267,24 +300,33 @@ export default function CutList() {
           .update({ curr_length: newBalance })
           .eq("id", it.id);
         if (updateErr) throw updateErr;
-      }
-
-      // delete reservation if one was loaded
-      // Only delete reservations for items that are actually being cut
-      if (reservationIdInput) {
-        for (const it of items) {
+        if (reservationIdInput) {
           const { error: deleteErr } = await supabase
             .from("reservation")
             .delete()
             .eq("reservation_id", reservationIdInput)
             .eq("drum_id", it.id);
           if (deleteErr) throw deleteErr;
+          const { data: checkOtherReservation } = await supabase
+            .from("reservation")
+            .select("id")
+            .eq("drum_id", it.id)
+            .limit(1)
+            .single();
+            
+          if (!checkOtherReservation) {
           const { error: updateErr } = await supabase
             .from("drum_cables")
             .update({ reserved: false })
             .eq("id", it.id);
           if (updateErr) throw updateErr;
+          }
         }
+      }
+      const waResponse = await sendWhatsAppMessage(items);
+
+      if (waResponse.error) {
+        toast.error("Failed to send WhatsApp message");
       }
 
       toast.success("Cuts recorded successfully.");
@@ -309,13 +351,10 @@ export default function CutList() {
   return (
     <div className="p-8 mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">Cutting</h1>
-        <p className="mt-2 text-gray-400">
-          Select cables to cut. Filters limit available brands, types and sizes.
-        </p>
+        <h1 className="text-3xl font-bold dark:text-white text-blue-500">Cutting</h1>
       </div>
 
-      <div className="space-y-6 bg-[#111827]/80 border border-[#0047FF]/30 rounded-3xl p-8 shadow-lg shadow-[#0047FF]/10">
+      <div className="space-y-6 bg-card dark:bg-[#111827]/80 border border-[#0047FF]/30 rounded-3xl p-8 shadow-lg shadow-[#0047FF]/10">
         {/* Notifications are shown via react-hot-toast */}
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -357,9 +396,7 @@ export default function CutList() {
                   (c.curr_length ?? 0) > 0,
               );
               if (candidates.length === 0) {
-                toast.error(
-                  "No available drums for selected brand/type/size",
-                );
+                toast.error("No available drums for selected brand/type/size");
                 return;
               }
 
@@ -370,37 +407,40 @@ export default function CutList() {
                     .from("reservation")
                     .select("length")
                     .eq("drum_id", candidate.id);
-
+                  const totalReserved = reservations?.reduce((sum, r) => sum + (r.length ?? 0), 0) ?? 0;
                   if (error) throw error;
                   return {
                     cable: candidate,
                     hasReservation: reservations && reservations.length > 0,
-                    reservationLength: reservations?.[0]?.length ?? 0,
+                    reservationLength: totalReserved,
                   };
                 }),
               );
 
-              // Filter candidates: exclude drums with unmet reservations
+              // Create map of cable id to total reserved length
+              const reservationMap = new Map(
+                candidatesWithReservations.map((cr) => [cr.cable.id, cr.reservationLength])
+              );
+
+              // Filter candidates: exclude drums with no available length after reservations
               const validCandidates = candidatesWithReservations
-                .filter(({ cable, hasReservation, reservationLength }) => {
-                  // If drum has a reservation, check if available length meets it
-                  if (hasReservation) {
-                    return (cable.curr_length ?? 0) > reservationLength;
-                  }
-                  return true;
+                .filter(({ cable, reservationLength }) => {
+                  const available = (cable.curr_length ?? 0) - reservationLength;
+                  return available > 0;
                 })
                 .map(({ cable }) => cable);
               console.log(validCandidates);
               if (validCandidates.length === 0) {
-                toast.error(
-                  "No available drums (all have unmet reservations)",
-                );
+                toast.error("No available drums (all have unmet reservations)");
                 return;
               }
 
-              const enough = validCandidates.filter(
-                (c) => (c.curr_length ?? 0) >= L,
-              );
+              // Filter for drums with enough available length after subtracting reservations
+              const enough = validCandidates.filter((c) => {
+                const totalReserved = reservationMap.get(c.id) ?? 0;
+                const available = (c.curr_length ?? 0) - totalReserved;
+                return available >= L;
+              });
               let chosen: DrumCable | null = null;
 
               if (enough.length > 0) {
@@ -408,7 +448,7 @@ export default function CutList() {
                 const opened = enough.filter(
                   (c) => (c.initial_length ?? 0) > (c.curr_length ?? 0),
                 );
-                
+
                 if (opened.length > 0) {
                   // Sort opened drums by remaining length (pick one with least remaining)
                   opened.sort(

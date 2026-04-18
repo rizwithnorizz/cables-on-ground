@@ -2,6 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== CUSTOM SCROLLBAR STYLES ===== */
+
+/* Light Mode Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox Light Mode Scrollbar */
+* {
+  scrollbar-color: #d1d5db transparent;
+  scrollbar-width: thin;
+}
+
+/* Dark Mode Scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #0047FF 0%, #003399 100%);
+  box-shadow: 0 0 6px rgba(0, 71, 255, 0.3);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #0052FF 0%, #0039CC 100%);
+  box-shadow: 0 0 12px rgba(0, 71, 255, 0.6);
+}
+
+/* Firefox Dark Mode Scrollbar */
+.dark * {
+  scrollbar-color: #0047FF transparent;
+}
+
+/* ===== TAILWIND LAYERS ===== */
+
 @layer base {
   :root {
     --background: 0 0% 100%;
