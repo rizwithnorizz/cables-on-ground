@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-hot-toast";
 import { ConfirmationModal } from "./confirmation-modal";
+import { User } from "@supabase/supabase-js";
 
 type Reservation = {
   id: number;
@@ -18,8 +19,12 @@ type Reservation = {
     drum_id: string;
     curr_length: number;
     size: string;
-    brand: { id: number; brand_name: string } | { id: number; brand_name: string }[];
-    type: { id: number; type_name: string } | { id: number; type_name: string }[];
+    brand:
+      | { id: number; brand_name: string }
+      | { id: number; brand_name: string }[];
+    type:
+      | { id: number; type_name: string }
+      | { id: number; type_name: string }[];
   };
 };
 
@@ -32,7 +37,11 @@ export default function ReservationsList() {
   const [toDate, setToDate] = useState("");
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<{ id: number; drumId: number } | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{
+    id: number;
+    drumId: number;
+  } | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -55,7 +64,7 @@ export default function ReservationsList() {
               curr_length,
               brand (id, brand_name),
               type (id, type_name)
-            )`
+            )`,
           )
           .order("created_at", { ascending: false });
 
@@ -65,7 +74,7 @@ export default function ReservationsList() {
       } catch (err) {
         if (isMounted) {
           toast.error(
-            err instanceof Error ? err.message : "Failed to load reservations"
+            err instanceof Error ? err.message : "Failed to load reservations",
           );
         }
       } finally {
@@ -77,6 +86,16 @@ export default function ReservationsList() {
     return () => {
       isMounted = false;
     };
+  }, []);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user ?? null);
+    };
+    checkAuth();
   }, []);
 
   const filteredReservations = useMemo(() => {
@@ -98,7 +117,9 @@ export default function ReservationsList() {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesRef = r.ref_no?.toLowerCase().includes(query) ?? false;
-        const matchesDrumId = r.drum_cables.drum_id.toLowerCase().includes(query);
+        const matchesDrumId = r.drum_cables.drum_id
+          .toLowerCase()
+          .includes(query);
         if (!matchesRef && !matchesDrumId) return false;
       }
 
@@ -117,7 +138,10 @@ export default function ReservationsList() {
 
     return Object.entries(groups)
       .map(([reservationId, reservs]) => {
-        const totalLength = reservs.reduce((sum, r) => sum + (r.length || 0), 0);
+        const totalLength = reservs.reduce(
+          (sum, r) => sum + (r.length || 0),
+          0,
+        );
         const dates = reservs.map((r) => new Date(r.created_at));
         const minDate = new Date(Math.min(...dates.map((d) => d.getTime())))
           .toISOString()
@@ -137,12 +161,14 @@ export default function ReservationsList() {
         };
       })
       .sort(
-        (a, b) =>
-          new Date(b.maxDate).getTime() - new Date(a.maxDate).getTime()
+        (a, b) => new Date(b.maxDate).getTime() - new Date(a.maxDate).getTime(),
       );
   }, [filteredReservations]);
 
-  const handleDeleteReservationItem = async (reservationItemId: number, drumId: number) => {
+  const handleDeleteReservationItem = async (
+    reservationItemId: number,
+    drumId: number,
+  ) => {
     setItemToDelete({ id: reservationItemId, drumId });
     setConfirmModalOpen(true);
   };
@@ -178,15 +204,15 @@ export default function ReservationsList() {
         if (updateErr) throw updateErr;
       }
 
-      setReservations((prev) =>
-        prev.filter((r) => r.id !== itemToDelete.id)
-      );
+      setReservations((prev) => prev.filter((r) => r.id !== itemToDelete.id));
       toast.success("Reservation item deleted successfully");
       setConfirmModalOpen(false);
       setItemToDelete(null);
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Failed to delete reservation item"
+        err instanceof Error
+          ? err.message
+          : "Failed to delete reservation item",
       );
     } finally {
       setDeletingId(null);
@@ -252,7 +278,9 @@ export default function ReservationsList() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium dark:text-gray-300">To Date</label>
+            <label className="text-sm font-medium dark:text-gray-300">
+              To Date
+            </label>
             <input
               type="date"
               value={toDate}
@@ -293,10 +321,16 @@ export default function ReservationsList() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm dark:text-gray-400">
-                    Total cables: <span className="dark:text-white font-semibold">{group.totalCables}</span>
+                    Total cables:{" "}
+                    <span className="dark:text-white font-semibold">
+                      {group.totalCables}
+                    </span>
                   </p>
                   <p className="text-sm dark:text-gray-400">
-                    Total length: <span className="dark:text-white font-semibold">{group.totalLength} M</span>
+                    Total length:{" "}
+                    <span className="dark:text-white font-semibold">
+                      {group.totalLength} M
+                    </span>
                   </p>
                 </div>
               </div>
@@ -306,12 +340,26 @@ export default function ReservationsList() {
                 <table className="w-full text-sm table-fixed">
                   <thead>
                     <tr className="border-b border-[#0047FF]/20">
-                      <th className="w-1/6 text-left py-2 px-3 dark:text-gray-300 font-medium">Brand</th>
-                      <th className="w-1/6 text-left py-2 px-3 dark:text-gray-300 font-medium">Type</th>
-                      <th className="w-1/6 text-left py-2 px-3 dark:text-gray-300 font-medium">Size</th>
-                      <th className="w-1/6 text-left py-2 px-3 dark:text-gray-300 font-medium">Drum Length</th>
-                      <th className="w-1/6 text-right py-2 px-3 dark:text-gray-300 font-medium">Reserved Length (M)</th>
-                      <th className="w-1/12 text-center py-2 px-3 dark:text-gray-300 font-medium">Action</th>
+                      <th className="w-1/6 text-left py-2 px-3 dark:text-gray-300 font-medium">
+                        Brand
+                      </th>
+                      <th className="w-1/6 text-left py-2 px-3 dark:text-gray-300 font-medium">
+                        Type
+                      </th>
+                      <th className="w-1/6 text-left py-2 px-3 dark:text-gray-300 font-medium">
+                        Size
+                      </th>
+                      <th className="w-1/6 text-left py-2 px-3 dark:text-gray-300 font-medium">
+                        Drum Length
+                      </th>
+                      <th className="w-1/6 text-right py-2 px-3 dark:text-gray-300 font-medium">
+                        Reserved Length (M)
+                      </th>
+                      {user && (
+                        <th className="w-1/12 text-center py-2 px-3 dark:text-gray-300 font-medium">
+                          Action
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -321,28 +369,41 @@ export default function ReservationsList() {
                         className="border-b border-[#0047FF]/10 hover:bg-[#0047FF]/5"
                       >
                         <td className="w-1/6 py-2 px-3 dark:text-gray-400">
-                          {(Array.isArray(res.drum_cables.brand) ? res.drum_cables.brand[0]?.brand_name : res.drum_cables.brand?.brand_name) || "Unknown"}
+                          {(Array.isArray(res.drum_cables.brand)
+                            ? res.drum_cables.brand[0]?.brand_name
+                            : res.drum_cables.brand?.brand_name) || "Unknown"}
                         </td>
                         <td className="w-1/6 py-2 px-3 dark:text-gray-400">
-                          {(Array.isArray(res.drum_cables.type) ? res.drum_cables.type[0]?.type_name : res.drum_cables.type?.type_name) || "Unknown"}
+                          {(Array.isArray(res.drum_cables.type)
+                            ? res.drum_cables.type[0]?.type_name
+                            : res.drum_cables.type?.type_name) || "Unknown"}
                         </td>
                         <td className="w-1/6 py-2 px-3 dark:text-gray-400">
                           {res.drum_cables.size}
                         </td>
-                        <td className="w-1/6 py-2 px-3 dark:text-white">{res.drum_cables.curr_length} m</td>
+                        <td className="w-1/6 py-2 px-3 dark:text-white">
+                          {res.drum_cables.curr_length} m
+                        </td>
                         <td className="w-1/6 py-2 px-3 text-right dark:text-white font-semibold">
                           {res.length} m
                         </td>
-                        <td className="w-1/12 py-2 px-3 text-center">
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteReservationItem(res.id, res.drum_cables.id)}
-                            disabled={deletingId === res.id}
-                          >
-                            {deletingId === res.id ? "Deleting..." : "Delete"}
-                          </Button>
-                        </td>
+                        {user && (
+                          <td className="w-1/12 py-2 px-3 text-center">
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() =>
+                                handleDeleteReservationItem(
+                                  res.id,
+                                  res.drum_cables.id,
+                                )
+                              }
+                              disabled={deletingId === res.id}
+                            >
+                              {deletingId === res.id ? "Deleting..." : "Delete"}
+                            </Button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
