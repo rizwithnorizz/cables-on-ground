@@ -734,14 +734,14 @@ export default function CableModal({
                             <button
                               onClick={handleSaveCertificateFromSmallCable}
                               disabled={isCopyingCert || !selectedSmallCableId}
-                              className="flex-1 bg-emerald-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
+                              className="flex-1 dark:bg-emerald-600 bg-[#0047FF]  text-white px-3 py-2 rounded text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
                             >
                               {isCopyingCert ? "Copying..." : "Save"}
                             </button>
                             <button
                               onClick={handleCancelSmallCableSelector}
                               disabled={isCopyingCert}
-                              className="flex-1 bg-[#0047FF]/20 text-gray-300 px-3 py-2 rounded text-sm font-medium hover:bg-[#0047FF]/30 disabled:opacity-50"
+                              className="flex-1 dark:bg-[#0047FF]/20 dark:text-gray-300 px-3 py-2 rounded text-sm font-medium hover:bg-[#0047FF]/30 disabled:opacity-50"
                             >
                               Cancel
                             </button>
