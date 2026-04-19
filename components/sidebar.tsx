@@ -35,40 +35,20 @@ const publicSidebarItems: SidebarItem[] = [
   { label: 'Reservations', href: '/reservations' }, 
 ];
 
-export function Sidebar() {
+export function Sidebar({ 
+  isAuthenticated,
+  isAdmin,
+  loading
+} : {
+  isAuthenticated: boolean;
+  isAdmin: boolean;
+  loading: boolean;
+}) {
   const pathname = usePathname();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const router = useRouter();
   
-  useEffect(() => {
-    const checkAuth = async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        setIsAuthenticated(true);
-        
-        // Check if user is in admin_role table
-        const { data: adminRole, error } = await supabase
-          .from('admin_role')
-          .select('uuid')
-          .eq('uuid',user.id)
-          .maybeSingle();
-        
-        setIsAdmin(!!adminRole && !error);
-      } else {
-        setIsAuthenticated(false);
-        setIsAdmin(false);
-      }
-      
-      setLoading(false);
-    };
-
-    checkAuth();
-  }, []);
+    
 
   const sidebarItems = isAuthenticated ? (isAdmin ? allSidebarItems : userSidebarItems) : publicSidebarItems;
   

@@ -124,10 +124,6 @@ export function DrumsTable() {
     return aParts.size - bParts.size;
   };
 
-  const uniqueSizes = useMemo(() => {
-    return Array.from(new Set(cables.map((c) => c.size))).sort(numericSizeSort);
-  }, [cables]);
-
   const brandMap = useMemo(
     () =>
       Object.fromEntries(

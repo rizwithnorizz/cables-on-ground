@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Edit, Download } from "lucide-react";
 import { TransactionTable } from "./TransactionTable";
 import { createClient } from '@/lib/supabase/client';
-
+import { useAuth } from '../auth-context';
 type Transaction = {
   id: string;
   created_at: string;
@@ -62,16 +62,8 @@ export function TransactionGroupCard({
   hasDownloadableContent,
 }: TransactionGroupCardProps) {
   const supabase = createClient();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session?.user);
-    };
-    checkAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const { isAuthenticated, isAdmin } = useAuth();
+  
   return (
     <div className="dark:bg-[#0b1220] border dark:border-[#1f2937] shadow-lg rounded-lg p-4">
       {/* Group Header */}
@@ -107,7 +99,7 @@ export function TransactionGroupCard({
           ) : (
             <div className="flex items-center justify-between gap-2 mt-2">
               <div className="flex items-center gap-2">
-                {!!isAuthenticated && (
+                {!isAuthenticated && !isAdmin && (
                   <button
                     onClick={() => onEditClick(group.ref_no, idx)}
                     className="pr-2 hover:text-blue-400 transition"

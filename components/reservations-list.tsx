@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-hot-toast";
 import { ConfirmationModal } from "./confirmation-modal";
-import { User } from "@supabase/supabase-js";
+import { useAuth } from "./auth-context";
 
 type Reservation = {
   id: number;
@@ -30,6 +30,7 @@ type Reservation = {
 
 export default function ReservationsList() {
   const supabase = createClient();
+  const { isAuthenticated } = useAuth();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -41,7 +42,6 @@ export default function ReservationsList() {
     id: number;
     drumId: number;
   } | null>(null);
-  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -86,16 +86,6 @@ export default function ReservationsList() {
     return () => {
       isMounted = false;
     };
-  }, []);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user ?? null);
-    };
-    checkAuth();
   }, []);
 
   const filteredReservations = useMemo(() => {
@@ -355,7 +345,7 @@ export default function ReservationsList() {
                       <th className="w-1/6 text-right py-2 px-3 dark:text-gray-300 font-medium">
                         Reserved Length (M)
                       </th>
-                      {user && (
+                      {isAuthenticated && (
                         <th className="w-1/12 text-center py-2 px-3 dark:text-gray-300 font-medium">
                           Action
                         </th>
@@ -387,7 +377,7 @@ export default function ReservationsList() {
                         <td className="w-1/6 py-2 px-3 text-right dark:text-white font-semibold">
                           {res.length} m
                         </td>
-                        {user && (
+                        {isAuthenticated && (
                           <td className="w-1/12 py-2 px-3 text-center">
                             <Button
                               variant="destructive"

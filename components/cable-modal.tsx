@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { User } from "@supabase/supabase-js";
+import { useAuth } from "./auth-context";
 
 type Transaction = {
   id: bigint;
@@ -68,11 +68,11 @@ export default function CableModal({
 }) {
   const supabase = createClient();
   const router = useRouter();
+  const { isAuthenticated, isAdmin } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedCurrLength, setEditedCurrLength] = useState<number>(cable?.curr_length ?? 0);
   const [editedInitialLength, setEditedInitialLength] = useState<number>(cable?.initial_length ?? 0);
@@ -96,16 +96,6 @@ export default function CableModal({
   const [loadingSmallCables, setLoadingSmallCables] = useState(false);
   const [selectedSmallCableId, setSelectedSmallCableId] = useState<string>("");
   const [isCopyingCert, setIsCopyingCert] = useState(false);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user ?? null);
-    };
-    checkAuth();
-  }, []);
 
   useEffect(() => {
     if (cable) {
@@ -498,7 +488,7 @@ export default function CableModal({
               </div>
             </div>
             <div className="flex gap-2">
-              {user && (
+              {isAuthenticated && isAdmin &&  (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   disabled={isDeleting}
@@ -521,7 +511,7 @@ export default function CableModal({
             <div className="bg-gray-100 dark:bg-[#1a1f3a] p-4 rounded-lg border dark:border-[#0047FF]/10 border-gray-300">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-700 dark:text-gray-400">Remaining Length</div>
-                {user && !isEditing && (
+                {isAuthenticated && !isEditing && isAdmin && (
                   <button
                     onClick={() => setIsEditing(true)}
                     className="text-xs dark:text-[#00C8FF] hover:underline"
@@ -668,7 +658,7 @@ export default function CableModal({
                 <>
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-semibold dark:text-gray-200">Cable Details</h4>
-                    {user && (
+                    {isAuthenticated && isAdmin && (
                       <button
                         onClick={() => setIsEditingDetails(true)}
                         className="text-xs text-[#00C8FF] hover:underline"
@@ -759,7 +749,7 @@ export default function CableModal({
                       >
                         View certificate
                       </a>
-                     { user && ( 
+                     { isAuthenticated && isAdmin && ( 
                        <button
                         onClick={handleRemoveCertificate}
                         disabled={isRemovingCert}
@@ -770,20 +760,20 @@ export default function CableModal({
                       </button>
                      )}
                     </div>
-                  ) : !user ? (
+                  ) : !isAuthenticated ? (
                     <div className="text-sm text-gray-500">
                       No certificate available. Sign in to upload.
                     </div>
                   ) : selectedCertFile ? (
                     <div className="space-y-3">
-                      <div className="bg-[#0b1220] p-3 rounded border border-[#0047FF]/20 flex items-center justify-between">
+                      <div className="dark:bg-[#0b1220] p-3 rounded border border-[#0047FF]/20 flex items-center justify-between">
                         <div className="flex-1 truncate">
-                          <div className="text-xs text-gray-500">Selected file:</div>
-                          <div className="text-sm text-gray-200 font-medium truncate">
+                          <div className="text-xs dark:text-gray-500">Selected file:</div>
+                          <div className="text-sm dark:text-gray-200 font-medium truncate">
                             {selectedCertFile.name}
                           </div>
                         </div>
-                        <div className="text-xs text-gray-400 ml-2">
+                        <div className="text-xs dark:text-gray-400 ml-2">
                           {(selectedCertFile.size / 1024 / 1024).toFixed(2)} MB
                         </div>
                       </div>
@@ -791,14 +781,14 @@ export default function CableModal({
                         <button
                           onClick={handleUpload}
                           disabled={uploading}
-                          className="flex-1 bg-emerald-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
+                          className="flex-1 bg-[#0047FF] text-white px-3 py-2 rounded text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
                         >
                           {uploading ? "Uploading..." : "Upload"}
                         </button>
                         <button
                           onClick={() => setSelectedCertFile(null)}
                           disabled={uploading}
-                          className="flex-1 bg-[#0047FF]/20 text-gray-300 px-3 py-2 rounded text-sm font-medium hover:bg-[#0047FF]/30 disabled:opacity-50"
+                          className="flex-1 dark:bg-[#0047FF]/20 dark:text-gray-300 px-3 py-2 rounded text-sm font-medium hover:bg-[#0047FF]/30 disabled:opacity-50"
                         >
                           Cancel
                         </button>
