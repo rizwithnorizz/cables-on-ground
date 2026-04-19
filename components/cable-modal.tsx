@@ -547,7 +547,7 @@ export default function CableModal({
                   </div>
                 )}
               </div>
-              <div className="w-full bg-gray-300 dark:bg-[#0b1220] h-3 rounded-full mt-3">
+              <div className="w-full bg-gray-300 dark:bg-[#0b1220] h-3 rounded-full mt-3 mb-1">
                 <div
                   className="h-3 rounded-full bg-emerald-500"
                   style={{ width: `${100 - (editedInitialLength > 0 ? Math.min(100, Math.round(((editedInitialLength - editedCurrLength) / editedInitialLength) * 100)) : 0)}%` }}
@@ -563,9 +563,9 @@ export default function CableModal({
                       type="number"
                       value={editedInitialLength}
                       onChange={(e) => setEditedInitialLength(parseFloat(e.target.value) || 0)}
-                      className="bg-[#0b1220] text-sm text-gray-400 border border-[#0047FF]/30 rounded px-2 py-1 w-20"
+                      className="dark:bg-[#0b1220] text-sm dark:text-gray-400 border border-[#0047FF]/30 rounded px-2 py-1 w-20"
                     />
-                    <span className="text-sm text-gray-400">m initial</span>
+                    <span className="text-sm dark:text-gray-400">m initial</span>
                   </div>
                 ) : (
                   <div className="text-sm dark:text-gray-400 font-semibold">
@@ -585,7 +585,7 @@ export default function CableModal({
                   <button
                     onClick={handleCancelEdit}
                     disabled={isSaving}
-                    className="flex-1 bg-[#0047FF]/20 text-gray-300 px-3 py-2 rounded text-sm font-medium hover:bg-[#0047FF]/30 disabled:opacity-50"
+                    className="flex-1 dark:bg-[#0047FF]/20 dark:text-gray-300 px-3 py-2 rounded text-sm font-medium hover:bg-[#0047FF]/30 disabled:opacity-50"
                   >
                     Cancel
                   </button>
@@ -603,7 +603,7 @@ export default function CableModal({
                         type="text"
                         value={editedDrumId}
                         onChange={(e) => setEditedDrumId(e.target.value)}
-                        className="w-full bg-[#0b1220] text-gray-100 border border-[#0047FF]/30 rounded px-2 py-1 text-sm"
+                        className="w-full dark:bg-[#0b1220] dark:text-gray-100 border border-[#0047FF]/30 rounded px-2 py-1 text-sm"
                       />
                     </div>
                     <div className="text-sm">
@@ -612,9 +612,8 @@ export default function CableModal({
                         value={editedBrand}
                         onChange={(e) => setEditedBrand(e.target.value ? (isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value)) : "")}
                         disabled={loadingBrandTypes}
-                        className="w-full bg-[#0b1220] text-gray-100 border border-[#0047FF]/30 rounded px-2 py-1 text-sm disabled:opacity-50"
+                        className="w-full dark:bg-[#0b1220] dark:text-gray-100 border border-[#0047FF]/30 rounded px-2 py-1 text-sm disabled:opacity-50"
                       >
-                        <option value="">Select brand</option>
                         {brands.map((brand) => (
                           <option key={brand.id} value={brand.id}>
                             {brand.brand_name}
@@ -628,7 +627,7 @@ export default function CableModal({
                         value={editedType}
                         onChange={(e) => setEditedType(e.target.value ? (isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value)) : "")}
                         disabled={loadingBrandTypes}
-                        className="w-full bg-[#0b1220] text-gray-100 border border-[#0047FF]/30 rounded px-2 py-1 text-sm disabled:opacity-50"
+                        className="w-full dark:bg-[#0b1220] dark:text-gray-100 border border-[#0047FF]/30 rounded px-2 py-1 text-sm disabled:opacity-50"
                       >
                         <option value="">Select type</option>
                         {types.map((type) => (
@@ -644,7 +643,7 @@ export default function CableModal({
                         type="text"
                         value={editedSize}
                         onChange={(e) => setEditedSize(e.target.value)}
-                        className="w-full bg-[#0b1220] text-gray-100 border border-[#0047FF]/30 rounded px-2 py-1 text-sm"
+                        className="w-full dark:bg-[#0b1220]  dark:text-gray-100 border border-[#0047FF]/30 rounded px-2 py-1 text-sm"
                       />
                     </div>
                   </div>
@@ -659,7 +658,7 @@ export default function CableModal({
                     <button
                       onClick={handleCancelEditDetails}
                       disabled={isSavingDetails}
-                      className="flex-1 bg-[#0047FF]/20 text-gray-300 px-3 py-2 rounded text-sm font-medium hover:bg-[#0047FF]/30 disabled:opacity-50"
+                      className="flex-1 dark:bg-[#0047FF]/20  dark:text-gray-300 px-3 py-2 rounded text-sm font-medium hover:bg-[#0047FF]/30 disabled:opacity-50"
                     >
                       Cancel
                     </button>
