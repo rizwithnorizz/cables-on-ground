@@ -886,17 +886,17 @@ export default function CableModal({
                   return (
                     <li key={t.id} className="flex items-start justify-between ">
                       <div>
-                        <div className="text-md font-medium text-gray-200">
+                        <div className="text-md font-medium dark:text-gray-200">
                           {t.ref_no}
                         </div>
                       </div>
                       <div
-                        className={`text-sm font-semibold items-end flex flex-col ${isCut ? "text-red-500" : "text-emerald-500"}`}
+                        className={`text-sm font-semibold items-end flex flex-col ${isCut ? "text-red-600" : "text-emerald-500"}`}
                       >
                         {isCut
                           ? `-${t.length_cut}m`
                           : `+${Math.abs(t.length_cut)}m`}
-                        <div className="text-xs text-gray-400">
+                        <div className="text-xs dark:text-gray-400 text-gray-700">
                           {new Date(t.created_at).toLocaleDateString()}
                         </div>
                       </div>
