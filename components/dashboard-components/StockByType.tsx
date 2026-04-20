@@ -128,6 +128,22 @@ export function StockByType() {
     [types]
   );
 
+  // Sort sizes numerically by prefix and postfix (e.g., 1x10, 1x16, 2x10, 2x16)
+  const sortSizesNumeric = (sizes: string[]): string[] => {
+    return [...sizes].sort((a, b) => {
+      const aParts = a.split('x').map((p) => parseInt(p, 10));
+      const bParts = b.split('x').map((p) => parseInt(p, 10));
+      
+      // First sort by prefix (first number)
+      if (aParts[0] !== bParts[0]) {
+        return aParts[0] - bParts[0];
+      }
+      
+      // Then sort by postfix (second number)
+      return aParts[1] - bParts[1];
+    });
+  };
+
   // Group data by brand and type, then sum by size
   const groupedData = useMemo(() => {
     const grouped = new Map<string, StockByBrandType>();
@@ -172,7 +188,7 @@ export function StockByType() {
     return {
       brands: Array.from(uniqueBrands).sort(),
       types: Array.from(uniqueTypes).sort(),
-      sizes: Array.from(uniqueSizes).sort(),
+      sizes: sortSizesNumeric(Array.from(uniqueSizes)),
     };
   }, [groupedData]);
 
@@ -214,8 +230,8 @@ export function StockByType() {
     filteredData.forEach((item) => {
       Object.keys(item.sizes).forEach((size) => sizes.add(size));
     });
-    return Array.from(sizes).sort();
-  }, [filteredData]);
+    return sortSizesNumeric(Array.from(sizes));
+  }, [filteredData, sortSizesNumeric]);
 
   const handleFilterChange = (
     filterType: keyof FilterState,
@@ -347,7 +363,8 @@ export function StockByType() {
 
               {/* Sizes for this brand/type combination */}
               <div className="space-y-3 ml-4 overflow-y-auto max-h-[60vh]">
-                {Object.entries(item.sizes).map(([size, sizeData]) => {
+                {sortSizesNumeric(Object.keys(item.sizes)).map((size) => {
+                  const sizeData = item.sizes[size];
                   // Check if size filter is applied
                   if (filters.size && size !== filters.size) {
                     return null;
