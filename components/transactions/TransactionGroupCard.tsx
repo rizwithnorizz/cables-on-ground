@@ -99,7 +99,7 @@ export function TransactionGroupCard({
           ) : (
             <div className="flex items-center justify-between gap-2 mt-2">
               <div className="flex items-center gap-2">
-                {!isAuthenticated && !isAdmin && (
+                {isAuthenticated && isAdmin && (
                   <button
                     onClick={() => onEditClick(group.ref_no, idx)}
                     className="pr-2 hover:text-blue-400 transition"
