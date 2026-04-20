@@ -61,11 +61,11 @@ export function CutListPanel({
       {/* Reservation Input Section */}
       <div className="mb-3 p-2 bg-[#0047FF]/10 border border-[#0047FF]/30 rounded text-sm text-muted-foreground dark:text-gray-300">
         <label className="space-y-2 text-sm text-black dark:text-gray-300 mb-3 w-full">
-          Enter Reservation ID
+          Enter Reservation Ticket
           <div className="flex gap-2">
             <Input
               className="flex-1"
-              placeholder="Reservation ID"
+              placeholder="Reservation Ticket"
               value={reservationIdInput}
               onChange={(e) => onReservationIdChange(e.target.value)}
               onKeyDown={(e) => {

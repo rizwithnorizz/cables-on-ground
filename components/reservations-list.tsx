@@ -296,7 +296,7 @@ export default function ReservationsList() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-lg font-semibold dark:text-white">
-                    Reservation {group.reservation_id}
+                    Reservation Ticket: {group.reservation_id}
                   </h3>
                   {group.ref_no && (
                     <p className="text-sm dark:text-gray-400">

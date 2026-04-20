@@ -156,7 +156,7 @@ export default function CutList() {
 
   const handleFindReservation = async () => {
     if (!reservationIdInput.trim()) {
-      toast.error("Please enter a reservation ID");
+      toast.error("Please enter a reservation ticket");
       return;
     }
 

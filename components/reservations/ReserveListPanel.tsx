@@ -56,10 +56,10 @@ export function ReserveListPanel({
     <div className="bg-secondary dark:bg-[#071025] border border-gray-200 dark:border-[#0b1220] rounded-md p-4">
       <h3 className="text-sm font-semibold text-foreground dark:text-white mb-2">Reserve List</h3>
 
-      {/* Reservation ID Display */}
+      {/* Reservation Ticket Display */}
       <div className="mb-3 p-2 bg-[#0047FF]/10 border border-[#0047FF]/30 rounded text-sm text-muted-foreground dark:text-gray-300">
         <label className="flex text-sm text-black dark:text-gray-300 w-full">
-          Reservation ID:  <p className="font-semibold ml-2 dark:text-white"> {nextReservationId ?? "—"} </p>
+          Reservation Ticket:  <p className="font-semibold ml-2 dark:text-white"> {nextReservationId ?? "—"} </p>
         </label>
       </div>
 

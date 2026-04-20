@@ -4,9 +4,9 @@ import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   StatsGrid,
-  LowStockAlerts,
   StockByType,
   RecentActivity,
+  ReservationsList,
 } from "./dashboard-components";
 
 type DrumCable = {
@@ -17,11 +17,6 @@ type DrumCable = {
   size: string;
   curr_length: number;
   initial_length: number;
-};
-
-type CableType = {
-  id: number;
-  type_name: string;
 };
 
 type Transaction = {
@@ -44,7 +39,6 @@ type Reservation = {
 export function Dashboard() {
   const supabase = createClient();
   const [cables, setCables] = useState<DrumCable[]>([]);
-  const [types, setTypes] = useState<CableType[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,9 +49,8 @@ export function Dashboard() {
       if (!isMounted) return;
       setLoading(true);
       try {
-        const [cablesRes, typesRes, transRes, reservRes] = await Promise.all([
+        const [cablesRes, transRes, reservRes] = await Promise.all([
           supabase.from("drum_cables").select("*"),
-          supabase.from("type").select("*"),
           supabase
             .from("cable_transactions")
             .select("*")
@@ -71,7 +64,6 @@ export function Dashboard() {
 
         if (isMounted) {
           setCables(cablesRes.data ?? []);
-          setTypes(typesRes.data ?? []);
           setTransactions(transRes.data ?? []);
           setReservations(reservRes.data ?? []);
         }
@@ -91,11 +83,14 @@ export function Dashboard() {
   // Calculate stats
   const stats = useMemo(() => {
     const totalDrums = cables.length;
-    const availableDrums = cables.filter((c) => (c.curr_length ?? 0) > 0).length;
+    const availableDrums = cables.filter(
+      (c) => (c.curr_length ?? 0) > 0,
+    ).length;
     const totalStock = cables.reduce((sum, c) => sum + (c.curr_length ?? 0), 0);
     const lowStockThreshold = 100;
     const lowStockDrums = cables.filter(
-      (c) => (c.curr_length ?? 0) > 0 && (c.curr_length ?? 0) < lowStockThreshold
+      (c) =>
+        (c.curr_length ?? 0) > 0 && (c.curr_length ?? 0) < lowStockThreshold,
     ).length;
     const emptyDrums = cables.filter((c) => (c.curr_length ?? 0) === 0).length;
     const reservedCount = reservations.length;
@@ -109,35 +104,6 @@ export function Dashboard() {
       reservedCount,
     };
   }, [cables, reservations]);
-
-  // Get low stock alerts
-  const lowStockAlerts = useMemo(() => {
-    return cables
-      .filter((c) => (c.curr_length ?? 0) > 0 && (c.curr_length ?? 0) < 100)
-      .sort((a, b) => (a.curr_length ?? 0) - (b.curr_length ?? 0))
-      .slice(0, 5);
-  }, [cables]);
-
-  // Stock by cable type
-  const stockByType = useMemo(() => {
-    const typeMap = Object.fromEntries(types.map((t) => [t.id, t.type_name]));
-    const grouped = cables.reduce(
-      (acc, cable) => {
-        const typeId = cable.type;
-        const typeName = typeMap[typeId] || "Unknown";
-        if (!acc[typeName]) {
-          acc[typeName] = 0;
-        }
-        acc[typeName] += cable.curr_length ?? 0;
-        return acc;
-      },
-      {} as Record<string, number>
-    );
-
-    return Object.entries(grouped)
-      .map(([name, length]) => ({ name, length }))
-      .sort((a, b) => b.length - a.length);
-  }, [cables, types]);
 
   // Recent activity (combined transactions and reservations)
   const recentActivity = useMemo(() => {
@@ -185,8 +151,6 @@ export function Dashboard() {
     );
   }
 
-  const maxStockLength = stockByType.length > 0 ? Math.max(...stockByType.map((s) => s.length)) : 1;
-
   const statCards = [
     {
       label: "Total Drums",
@@ -229,21 +193,23 @@ export function Dashboard() {
         <h1 className="text-3xl font-bold dark:text-white text-blue-500">
           Dashboard
         </h1>
-        <p className="text-gray-400 mt-2">Overview of your cable drum inventory</p>
+        <p className="text-gray-400 mt-2">
+          Overview of your cable drum inventory
+        </p>
       </div>
 
       {/* Stats Cards */}
       <StatsGrid stats={statCards} />
-        <StockByType />
 
-      {/* Low Stock Alerts */}
-
-      {/* Stock by Type and Recent Activity */}
+      {/* Main Content: Stock by Type and Reservations */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Stock by Type - Takes 2 columns */}
+        <div className="lg:col-span-3">
+          <StockByType />
+        </div>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Stock by Cable Type */}
-      <LowStockAlerts alerts={lowStockAlerts} />
-
-        {/* Recent Activity */}
+        <ReservationsList />
         <RecentActivity activities={recentActivity} />
       </div>
     </div>
