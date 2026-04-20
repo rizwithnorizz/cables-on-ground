@@ -23,7 +23,7 @@ export function LowStockAlerts({ alerts }: LowStockAlertsProps) {
         <span className="text-xl">⚠️</span>
         <h2 className="font-semibold text-[#111827] dark:text-yellow-400">Low Stock Alerts</h2>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-2  overflow-x-auto max-h-[50vh]  ">
         {alerts.map((cable) => (
           <div
             key={cable.id}

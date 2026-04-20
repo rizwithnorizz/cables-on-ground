@@ -234,14 +234,14 @@ export function Dashboard() {
 
       {/* Stats Cards */}
       <StatsGrid stats={statCards} />
+        <StockByType />
 
       {/* Low Stock Alerts */}
-      <LowStockAlerts alerts={lowStockAlerts} />
 
       {/* Stock by Type and Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Stock by Cable Type */}
-        <StockByType items={stockByType} maxLength={maxStockLength} />
+      <LowStockAlerts alerts={lowStockAlerts} />
 
         {/* Recent Activity */}
         <RecentActivity activities={recentActivity} />

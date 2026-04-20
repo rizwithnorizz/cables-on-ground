@@ -25,7 +25,7 @@ export function RecentActivity({ activities }: RecentActivityProps) {
           </p>
         </Link>
       </div>
-      <div className="space-y-4">
+      <div className="space-y-4  overflow-x-auto max-h-[50vh]  ">
         {activities.length === 0 ? (
           <p className="text-gray-500 text-sm">No recent activity</p>
         ) : (
