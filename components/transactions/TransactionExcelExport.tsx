@@ -2,7 +2,6 @@
 
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
-import type { Workbook, Worksheet, Row, Cell } from 'exceljs';
 
 // eslint-disable-next-line @typescript-eslint/no-require
 const ExcelJS = require('exceljs');
@@ -29,8 +28,8 @@ type TransactionExcelExportProps = {
 
 export function TransactionExcelExport({ transactions }: TransactionExcelExportProps) {
   const downloadExcelFile = async () => {
-    const workbook: Workbook = new ExcelJS.Workbook();
-    const worksheet: Worksheet = workbook.addWorksheet('Transactions');
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Transactions');
 
     // Define columns
     worksheet.columns = [
@@ -75,7 +74,7 @@ export function TransactionExcelExport({ transactions }: TransactionExcelExportP
     });
 
     // Format data rows
-    worksheet.eachRow((row: Row, rowNumber: number) => {
+    worksheet.eachRow((row: any, rowNumber: number) => {
       if (rowNumber > 1) {
         row.alignment = { horizontal: 'left', vertical: 'middle' };
         
@@ -85,7 +84,7 @@ export function TransactionExcelExport({ transactions }: TransactionExcelExportP
         }
 
         // Add borders
-        row.eachCell((cell: Cell) => {
+        row.eachCell((cell: any) => {
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -97,7 +96,7 @@ export function TransactionExcelExport({ transactions }: TransactionExcelExportP
     });
 
     // Add borders to header
-    headerRow.eachCell((cell: Cell) => {
+    headerRow.eachCell((cell: any) => {
       cell.border = {
         top: { style: 'thin' },
         left: { style: 'thin' },
