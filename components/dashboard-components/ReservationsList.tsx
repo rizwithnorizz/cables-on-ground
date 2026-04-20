@@ -50,7 +50,6 @@ export function ReservationsList() {
             length
             `)  
           .order("created_at", { ascending: false });
-            console.log(data);
         if (error) throw error;
 
         if (isMounted) {

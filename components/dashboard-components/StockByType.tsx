@@ -69,7 +69,6 @@ export function StockByType() {
           supabase
             .from("drum_cables")
             .select("*")
-            .eq("reserved", false)
             .order("curr_length", { ascending: false }),
           supabase
             .from("type")
@@ -82,9 +81,7 @@ export function StockByType() {
         ]);
 
         if (cablesResult.error || typesResult.error || brandsResult.error) {
-          throw (
-            cablesResult.error || typesResult.error || brandsResult.error
-          );
+          throw cablesResult.error || typesResult.error || brandsResult.error;
         }
 
         if (isMounted) {
@@ -115,35 +112,34 @@ export function StockByType() {
   const brandMap = useMemo(
     () =>
       Object.fromEntries(
-        brands.map((brand) => [String(brand.id), brand.brand_name])
+        brands.map((brand) => [String(brand.id), brand.brand_name]),
       ),
-    [brands]
+    [brands],
   );
 
   const typeMap = useMemo(
     () =>
       Object.fromEntries(
-        types.map((type) => [String(type.id), type.type_name])
+        types.map((type) => [String(type.id), type.type_name]),
       ),
-    [types]
+    [types],
   );
 
   // Sort sizes numerically by prefix and postfix (e.g., 1x10, 1x16, 2x10, 2x16)
   const sortSizesNumeric = (sizes: string[]): string[] => {
     return [...sizes].sort((a, b) => {
-      const aParts = a.split('x').map((p) => parseInt(p, 10));
-      const bParts = b.split('x').map((p) => parseInt(p, 10));
-      
+      const aParts = a.split("x").map((p) => parseInt(p, 10));
+      const bParts = b.split("x").map((p) => parseInt(p, 10));
+
       // First sort by prefix (first number)
       if (aParts[0] !== bParts[0]) {
         return aParts[0] - bParts[0];
       }
-      
+
       // Then sort by postfix (second number)
       return aParts[1] - bParts[1];
     });
   };
-
   // Group data by brand and type, then sum by size
   const groupedData = useMemo(() => {
     const grouped = new Map<string, StockByBrandType>();
@@ -163,13 +159,16 @@ export function StockByType() {
 
       const entry = grouped.get(key)!;
       if (!entry.sizes[cable.size]) {
-        entry.sizes[cable.size] = { totalLength: 0, totalInitialLength: 0, count: 0 };
+        entry.sizes[cable.size] = {
+          totalLength: 0,
+          totalInitialLength: 0,
+          count: 0,
+        };
       }
       entry.sizes[cable.size].totalLength += cable.curr_length;
       entry.sizes[cable.size].totalInitialLength += cable.initial_length;
       entry.sizes[cable.size].count += 1;
     });
-
     return Array.from(grouped.values());
   }, [cables, brandMap, typeMap]);
 
@@ -184,7 +183,6 @@ export function StockByType() {
       uniqueTypes.add(item.type);
       Object.keys(item.sizes).forEach((size) => uniqueSizes.add(size));
     });
-
     return {
       brands: Array.from(uniqueBrands).sort(),
       types: Array.from(uniqueTypes).sort(),
@@ -194,20 +192,14 @@ export function StockByType() {
 
   // Set default selections to first index (brand and type only, not size)
   useEffect(() => {
-    if (
-      filterOptions.brands.length > 0 &&
-      !filters.brand
-    ) {
+    if (filterOptions.brands.length > 0 && !filters.brand) {
       setFilters((prev) => ({
         ...prev,
         brand: filterOptions.brands[0],
       }));
     }
 
-    if (
-      filterOptions.types.length > 0 &&
-      !filters.type
-    ) {
+    if (filterOptions.types.length > 0 && !filters.type) {
       setFilters((prev) => ({
         ...prev,
         type: filterOptions.types[0],
@@ -235,7 +227,7 @@ export function StockByType() {
 
   const handleFilterChange = (
     filterType: keyof FilterState,
-    value: string | null
+    value: string | null,
   ) => {
     setFilters((prev) => ({
       ...prev,
@@ -378,11 +370,11 @@ export function StockByType() {
                             {size}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {sizeData.count} available cables
+                            {sizeData.count} cables
                           </p>
                         </div>
                         <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                          {sizeData.totalLength}m
+                          {sizeData.totalLength} {"(m)"} Total
                         </p>
                       </div>
                       <div className="w-full bg-gray-300 dark:bg-[#0b1220] rounded-full h-2">
@@ -390,7 +382,9 @@ export function StockByType() {
                           className="bg-gradient-to-r from-blue-500 dark:from-[#0047FF] to-blue-400 dark:to-[#00C8FF] h-2 rounded-full"
                           style={{
                             width: `${
-                              (sizeData.totalLength / sizeData.totalInitialLength) * 100
+                              (sizeData.totalLength /
+                                sizeData.totalInitialLength) *
+                              100
                             }%`,
                           }}
                         />
