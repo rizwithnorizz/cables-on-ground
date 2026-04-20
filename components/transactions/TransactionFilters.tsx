@@ -51,7 +51,7 @@ export function TransactionFilters({
       </div>
 
       {/* Clear Filters Button */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 mt-2">
         <Button variant="secondary" onClick={onClearFilters}>
           Clear Filters
         </Button>

@@ -9,6 +9,7 @@ import {
   TransactionFilters,
   TransactionGroupCard,
   PaginationControls,
+  TransactionExcelExport,
 } from "./transactions";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -327,20 +328,29 @@ export default function TransactionsList() {
       </div>
 
       <div className="space-y-6 dark:bg-[#111827]/80 border dark:border-[#0047FF]/30 rounded-3xl p-8 shadow-lg dark:shadow-[#0047FF]/10">
-        {/* Filters */}
-        <TransactionFilters
-          searchQuery={searchQuery}
-          fromDate={fromDate}
-          toDate={toDate}
-          onSearchChange={setSearchQuery}
-          onFromDateChange={setFromDate}
-          onToDateChange={setToDate}
-          onClearFilters={() => {
-            setSearchQuery("");
-            setFromDate("");
-            setToDate("");
-          }}
-        />
+        {/* Filter and Export Controls */}
+        <div className="flex justify-between items-start gap-4 flex-wrap">
+          <div className="flex-1 min-w-fit">
+            <TransactionFilters
+              searchQuery={searchQuery}
+              fromDate={fromDate}
+              toDate={toDate}
+              onSearchChange={setSearchQuery}
+              onFromDateChange={setFromDate}
+              onToDateChange={setToDate}
+              onClearFilters={() => {
+                setSearchQuery("");
+                setFromDate("");
+                setToDate("");
+              }}
+            />
+          </div>
+          {filteredTransactions.length > 0 && (
+            <div className="mt-2">
+              <TransactionExcelExport transactions={filteredTransactions} />
+            </div>
+          )}
+        </div>
 
         {/* Results */}
         {loading ? (
@@ -353,6 +363,19 @@ export default function TransactionsList() {
           </div>
         ) : (
           <>
+          
+
+            {/* Pagination Controls */}
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              startIdx={startIdx}
+              endIdx={endIdx}
+              totalItems={groupedTransactions.length}
+              onPrevious={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              onNext={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              onPageChange={setCurrentPage}
+            />
             <div className="space-y-4">
               {paginatedTransactions.map((group, idx) => (
                 <TransactionGroupCard
@@ -374,18 +397,6 @@ export default function TransactionsList() {
                 />
               ))}
             </div>
-
-            {/* Pagination Controls */}
-            <PaginationControls
-              currentPage={currentPage}
-              totalPages={totalPages}
-              startIdx={startIdx}
-              endIdx={endIdx}
-              totalItems={groupedTransactions.length}
-              onPrevious={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              onNext={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              onPageChange={setCurrentPage}
-            />
           </>
         )}
       </div>

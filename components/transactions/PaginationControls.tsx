@@ -26,7 +26,7 @@ export function PaginationControls({
   }
 
   return (
-    <div className="flex items-center justify-between pt-6 border-t border-[#1f2937]">
+    <div className="flex items-center justify-between pb-6 border-b border-[#1f2937]">
       <div className="text-sm text-gray-400">
         Showing {startIdx + 1} to {Math.min(endIdx, totalItems)} of {totalItems}{" "}
         transactions
@@ -46,8 +46,8 @@ export function PaginationControls({
               onClick={() => onPageChange(page)}
               className={`px-3 py-1 rounded text-sm transition ${
                 currentPage === page
-                  ? "bg-blue-500 text-white"
-                  : "bg-[#1f2937] text-gray-300 hover:bg-[#2d3748]"
+                  ? "dark:bg-[#1f2937] bg-blue-500 text-white  "
+                  : "dark:bg-blue-500 bg-gray-400 text-white hover:bg-[#2d3748]"
               }`}
             >
               {page}

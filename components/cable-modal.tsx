@@ -912,7 +912,7 @@ export default function CableModal({
             <button
               onClick={() => setShowDeleteConfirm(false)}
               disabled={isDeleting}
-              className="px-4 py-2 bg-[#0047FF]/20 text-gray-300 rounded-lg font-medium hover:bg-[#0047FF]/30 disabled:opacity-50 transition"
+              className="px-4 py-2 dark:bg-[#0047FF]/20 dark:text-gray-300 rounded-lg font-medium hover:bg-[#0047FF]/30 disabled:opacity-50 transition"
             >
               Cancel
             </button>
