@@ -27,6 +27,7 @@ type CutItem = {
   cutLength: string;
   refNo?: string;
   cut_version: number;
+  reservationId?: string;
 };
 
 type Laborers = {
@@ -37,11 +38,6 @@ type Laborers = {
   default: boolean;
 }
 
-
-type Transaction = {
-  refNo: string;
-  items: CutItem[];
-};
 
 type CableType = { id: number; type_name: string };
 type CableBrand = { id: number; brand_name: string };
@@ -195,6 +191,7 @@ export default function CutList() {
                 cutLength: String(res.length),
                 refNo: reservationIdInput,
                 cut_version: version,
+                reservationId: res.id,
               },
             ]);
           }
@@ -338,12 +335,11 @@ export default function CutList() {
           .update({ curr_length: newBalance })
           .eq("id", it.id);
         if (updateErr) throw updateErr;
-        if (reservationIdInput) {
+        if (reservationIdInput && it.reservationId) {
           const { error: deleteErr } = await supabase
             .from("reservation")
             .delete()
-            .eq("reservation_id", reservationIdInput)
-            .eq("drum_id", it.id);
+            .eq("id", it.reservationId);
           if (deleteErr) throw deleteErr;
           const { data: checkOtherReservation } = await supabase
             .from("reservation")
