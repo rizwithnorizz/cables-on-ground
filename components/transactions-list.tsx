@@ -39,23 +39,11 @@ export default function TransactionsList() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [editingGroupIdx, setEditingGroupIdx] = useState<number | null>(null);
-  const [editValue, setEditValue] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
   const [downloadingGroupIdx, setDownloadingGroupIdx] = useState<number | null>(
     null,
   );
-  const itemsPerPage = 20;
+  const itemsPerPage = 15;
 
-  const handleEditClick = (refNo: string | null, idx: number) => {
-    setEditingGroupIdx(idx);
-    setEditValue(refNo || "");
-  };
-
-  const handleCancel = () => {
-    setEditingGroupIdx(null);
-    setEditValue("");
-  };
 
   const handleDownloadCertificates = async (
     group: (typeof groupedTransactions)[0],
@@ -150,55 +138,6 @@ export default function TransactionsList() {
     }
   };
 
-  const handleSave = async (oldRefNo: string | null, idx: number) => {
-    setIsSaving(true);
-    try {
-      // Update all transactions with the old ref_no to the new one
-      const oldKey = oldRefNo || "NO_REF";
-
-      // Find all transactions with this ref_no
-      const transactionsToUpdate = transactions.filter(
-        (t) => (t.ref_no || "NO_REF") === oldKey,
-      );
-
-      if (transactionsToUpdate.length === 0) {
-        console.error("No transactions found to update");
-        setIsSaving(false);
-        return;
-      }
-
-      // Update each transaction in the database
-      const updates = transactionsToUpdate.map((tx) =>
-        supabase
-          .from("cable_transactions")
-          .update({ ref_no: editValue || null })
-          .eq("id", tx.id),
-      );
-
-      const results = await Promise.all(updates);
-
-      // Check for errors
-      for (const result of results) {
-        if (result.error) throw result.error;
-      }
-
-      // Update local state
-      const updatedTransactions = transactions.map((t) =>
-        (t.ref_no || "NO_REF") === oldKey
-          ? { ...t, ref_no: editValue || null }
-          : t,
-      );
-      setTransactions(updatedTransactions);
-
-      setEditingGroupIdx(null);
-      setEditValue("");
-    } catch (err) {
-      console.error("Failed to update reference number:", err);
-      alert("Failed to save changes. Please try again.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   useEffect(() => {
     let isMounted = true;
@@ -382,14 +321,7 @@ export default function TransactionsList() {
                   key={idx}
                   group={group}
                   idx={idx}
-                  isEditing={editingGroupIdx === idx}
-                  editValue={editValue}
-                  isSaving={isSaving}
                   isDownloading={downloadingGroupIdx === idx}
-                  onEditClick={handleEditClick}
-                  onCancel={handleCancel}
-                  onSave={handleSave}
-                  onEditValueChange={setEditValue}
                   onDownload={handleDownloadCertificates}
                   hasDownloadableContent={group.transactions.some(
                     (tx) => tx.drum_id.testcertificate,

@@ -1,12 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Edit, Download } from "lucide-react";
 import { TransactionTable } from "./TransactionTable";
-import { createClient } from '@/lib/supabase/client';
-import { useAuth } from '../auth-context';
+import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "../auth-context";
 type Transaction = {
   id: string;
   created_at: string;
@@ -35,14 +32,7 @@ type TransactionGroup = {
 type TransactionGroupCardProps = {
   group: TransactionGroup;
   idx: number;
-  isEditing: boolean;
-  editValue: string;
-  isSaving: boolean;
   isDownloading: boolean;
-  onEditClick: (refNo: string | null, idx: number) => void;
-  onCancel: () => void;
-  onSave: (oldRefNo: string | null, idx: number) => void;
-  onEditValueChange: (value: string) => void;
   onDownload: (group: TransactionGroup, idx: number) => void;
   hasDownloadableContent: boolean;
 };
@@ -50,20 +40,13 @@ type TransactionGroupCardProps = {
 export function TransactionGroupCard({
   group,
   idx,
-  isEditing,
-  editValue,
-  isSaving,
   isDownloading,
-  onEditClick,
-  onCancel,
-  onSave,
-  onEditValueChange,
   onDownload,
   hasDownloadableContent,
 }: TransactionGroupCardProps) {
   const supabase = createClient();
   const { isAuthenticated, isAdmin } = useAuth();
-  
+
   return (
     <div className="dark:bg-[#0b1220] border dark:border-[#1f2937] shadow-lg rounded-lg p-4">
       {/* Group Header */}
@@ -71,49 +54,14 @@ export function TransactionGroupCard({
         {/* Reference Section */}
         <div>
           <p className="text-xs dark:text-gray-500 uppercase">Reference</p>
-          {isEditing ? (
-            <div className="flex gap-2 mt-2">
-              <Input
-                value={editValue}
-                onChange={(e) => onEditValueChange(e.target.value)}
-                placeholder="Enter reference number"
-                className="text-sm"
-              />
-              <Button
-                onClick={() => onSave(group.ref_no, idx)}
-                disabled={isSaving}
-                variant="default"
-                className="text-xs whitespace-nowrap"
-              >
-                {isSaving ? "Saving..." : "Save"}
-              </Button>
-              <Button
-                onClick={onCancel}
-                disabled={isSaving}
-                variant="secondary"
-                className="text-xs whitespace-nowrap"
-              >
-                Cancel
-              </Button>
+
+          <div className="flex items-center justify-between gap-2 mt-2">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold dark:text-white">
+                {group.ref_no || <span className="text-gray-500">—</span>}
+              </p>
             </div>
-          ) : (
-            <div className="flex items-center justify-between gap-2 mt-2">
-              <div className="flex items-center gap-2">
-                {isAuthenticated && isAdmin && (
-                  <button
-                    onClick={() => onEditClick(group.ref_no, idx)}
-                    className="pr-2 hover:text-blue-400 transition"
-                    title="Edit reference number"
-                  >
-                    <Edit size={14} />
-                  </button>
-                )}
-                <p className="text-sm font-semibold dark:text-white">
-                  {group.ref_no || <span className="text-gray-500">—</span>}
-                </p>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
 
         {/* Total Length */}
