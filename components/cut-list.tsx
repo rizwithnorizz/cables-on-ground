@@ -15,6 +15,7 @@ type DrumCable = {
   size: string;
   curr_length: number;
   initial_length: number;
+  open: boolean;
 };
 
 type CutItem = {
@@ -481,6 +482,7 @@ export default function CutList() {
                 // Prefer opened drums (ones that have been partially used)
                 const opened = enough.filter(
                   (c) => (c.initial_length ?? 0) > (c.curr_length ?? 0),
+                  (c) => (c.open === true),
                 );
 
                 if (opened.length > 0) {
