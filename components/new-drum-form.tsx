@@ -37,6 +37,7 @@ export default function NewDrumForm() {
   const [currLength, setCurrLength] = useState("");
   const [initialLength, setInitialLength] = useState("");
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
+  const [opened, setOpened] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -161,6 +162,7 @@ export default function NewDrumForm() {
         curr_length: currentLengthNumber,
         initial_length: initialLengthNumber,
         testcertificate: certificateUrl,
+        open: opened,
       },
     ]);
 
@@ -278,6 +280,23 @@ export default function NewDrumForm() {
             />
           </label>
 
+          { /** create a switch here to update if the drum is open */}
+          <label className="flex items-center space-x-3 text-sm dark:text-gray-300 mb-3">
+            <span>Open?</span>
+            <button
+              type="button"
+              onClick={() => setOpened(!opened)}
+              className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#111827] ${
+                opened ? "bg-blue-500" : "bg-gray-300 dark:bg-gray-600"
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  opened ? "translate-x-4" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </label>
         </div>
 
         <CertificateDragDrop

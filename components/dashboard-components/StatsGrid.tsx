@@ -25,7 +25,6 @@ export function StatsGrid({ stats }: StatsGridProps) {
               <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stat.value}</p>
               <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{stat.subtext}</p>
             </div>
-            <div className="text-2xl">{stat.emoji}</div>
           </div>
         </div>
       ))}
