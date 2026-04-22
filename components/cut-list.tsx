@@ -481,7 +481,6 @@ export default function CutList() {
               if (enough.length > 0) {
                 // Prefer opened drums (ones that have been partially used)
                 const opened = enough.filter(
-                  (c) => (c.initial_length ?? 0) > (c.curr_length ?? 0),
                   (c) => (c.open === true),
                 );
 
