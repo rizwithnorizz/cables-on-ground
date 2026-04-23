@@ -3,12 +3,20 @@ import { NextRequest, NextResponse } from "next/server";
 
 type WhatsAppMessagePayload = {
   messaging_product: string;
-  recipient_type: string;
   to: string;
   type: string;
-  text?: {
-    preview_url: boolean;
-    body: string;
+  template?: {
+    name: string;
+    language: {
+      code: string;
+    };
+    components: Array<{
+      type: string;
+      parameters: Array<{
+        type: string;
+        text: string;
+      }>;
+    }>;
   };
 };
 
@@ -20,6 +28,7 @@ export async function POST(request: NextRequest) {
       items,
       brands,
       types,
+      laborerName,
     }: {
         transactionRef: string;
         phoneNumber: string;
@@ -33,10 +42,11 @@ export async function POST(request: NextRequest) {
         }[];
         brands: { id: number; brand_name: string }[];
         types: { id: number; type_name: string }[];
+        laborerName: string;
     } = await request.json();
 
     // Validate required fields
-    if (!phoneNumber || !items || items.length === 0) {
+    if (!phoneNumber || !items || items.length === 0 || !laborerName) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -56,30 +66,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Format the message
-    const message = `
-    Reference: ${transactionRef || "N/A"}
-    New Cable Cutting Request:  
-    ${items
+    // Format the message for template parameter ({{3}})
+    const message = items
       .map(
         (item, index) =>
-        `\n${index + 1}. ${brands.find((b) => b.id === item.brand)?.brand_name}
-        ${item.size} - ${types.find((t) => t.id === item.type)?.type_name}
-        Drum: ${item.available}m 
-        Customer: ${item.cutLength}m
-        Balance: ${item.available - parseFloat(item.cutLength)}m`
-        )
-        .join("\n")}
-    `.trim();
+        `${index + 1}. ${brands.find((b) => b.id === item.brand)?.brand_name} ${item.size} - ${types.find((t) => t.id === item.type)?.type_name}\nDrum: ${item.available}m\nCustomer: ${item.cutLength}m\nBalance: ${item.available - parseFloat(item.cutLength)}m`
+      )
+      .join("\n\n");
 
     const payload: WhatsAppMessagePayload = {
       messaging_product: "whatsapp",
-      recipient_type: "individual",
       to: phoneNumber,
-      type: "text",
-      text: {
-        preview_url: false,
-        body: message,
+      type: "template",
+      template: {
+        name: "cutting_request",
+        language: {
+          code: "en_US",
+        },
+        components: [
+          {
+            type: "body",
+            parameters: [
+              {
+                type: "text",
+                text: laborerName,
+              },
+              {
+                type: "text",
+                text: transactionRef || "N/A",
+              },
+              {
+                type: "text",
+                text: message,
+              },
+            ],
+          },
+        ],
       },
     };
 

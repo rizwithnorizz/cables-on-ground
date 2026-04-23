@@ -255,6 +255,7 @@ export default function CutList() {
   async function sendWhatsAppMessage(
     items: CutItem[],
   ) {
+    const laborerName = selectedLaborer?.name;
     const phoneNumber = selectedLaborer?.mobile_no;
     const response = await fetch("/api/whatsapp/send", {
       method: "POST",
@@ -263,6 +264,7 @@ export default function CutList() {
       },
       body: JSON.stringify({
         transactionRef,
+        laborerName,
         phoneNumber,
         items,
         brands,
