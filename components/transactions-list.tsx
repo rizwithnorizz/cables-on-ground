@@ -51,7 +51,6 @@ export default function TransactionsList() {
   ) => {
     setDownloadingGroupIdx(groupIdx);
     try {
-      // Collect all unique certificates from the group
       const certificateUrls = group.transactions
         .map((tx) => tx.drum_id.testcertificate)
         .filter((cert) => cert !== null && cert !== undefined) as string[];
@@ -64,12 +63,10 @@ export default function TransactionsList() {
 
       const uniqueCerts = Array.from(new Set(certificateUrls));
 
-      // Create a zip file
       const zip = new JSZip();
       let successCount = 0;
       let failedCount = 0;
 
-      // Download each certificate and add to zip
       for (let i = 0; i < uniqueCerts.length; i++) {
         try {
           const certUrl = uniqueCerts[i];
@@ -82,11 +79,9 @@ export default function TransactionsList() {
 
           const blob = await response.blob();
 
-          // Extract filename from URL or create one
           const urlParts = certUrl.split("/");
           let filename = urlParts[urlParts.length - 1].split("?")[0];
 
-          // If filename is unclear, create a descriptive one
           if (!filename || filename.length < 3) {
             const drumIds = group.transactions
               .filter((tx) => tx.drum_id.testcertificate === certUrl)
@@ -110,17 +105,14 @@ export default function TransactionsList() {
         return;
       }
 
-      // Generate the zip file
       const zipBlob = await zip.generateAsync({ type: "blob" });
 
-      // Create filename with ref_no if available
       const refNo = group.ref_no
         ? group.ref_no.replace(/\s+/g, "_")
         : "transactions";
       const timestamp = new Date().toISOString().split("T")[0];
       const zipFilename = `certificates_${refNo}_${timestamp}.zip`;
 
-      // Download the zip file
       saveAs(zipBlob, zipFilename);
 
       if (failedCount > 0) {
@@ -245,13 +237,11 @@ export default function TransactionsList() {
       );
   }, [filteredTransactions]);
 
-  // Pagination
   const totalPages = Math.ceil(groupedTransactions.length / itemsPerPage);
   const startIdx = (currentPage - 1) * itemsPerPage;
   const endIdx = startIdx + itemsPerPage;
   const paginatedTransactions = groupedTransactions.slice(startIdx, endIdx);
 
-  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, fromDate, toDate]);

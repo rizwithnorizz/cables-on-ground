@@ -1,9 +1,12 @@
 "use client";
 
-import { Edit, Download } from "lucide-react";
+import { Edit, Download, Trash2 } from "lucide-react";
 import { TransactionTable } from "./TransactionTable";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "../auth-context";
+import { toast } from "react-hot-toast";
+import { useState } from "react";
+import { ConfirmationModal } from "@/components/confirmation-modal";
 type Transaction = {
   id: string;
   created_at: string;
@@ -46,6 +49,67 @@ export function TransactionGroupCard({
 }: TransactionGroupCardProps) {
   const supabase = createClient();
   const { isAuthenticated, isAdmin } = useAuth();
+  const [isReversing, setIsReversing] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  const handleReverseTransactions = async () => {
+    if (!isAdmin || !isAuthenticated) {
+      toast.error("Only admins can reverse transactions");
+      return;
+    }
+
+    setShowConfirmModal(true);
+  };
+
+  const confirmReverseTransactions = async () => {
+    setShowConfirmModal(false);
+    setIsReversing(true);
+    try {
+      for (const transaction of group.transactions) {
+        // Get current drum data
+        const { data: drum, error: drumError } = await supabase
+          .from("drum_cables")
+          .select("curr_length")
+          .eq("id", transaction.drum_id.id)
+          .single();
+
+        if (drumError) throw drumError;
+
+        // Add back the cut length
+        const newAvailable = (drum?.curr_length || 0) + transaction.length_cut;
+
+        const { error: updateError } = await supabase
+          .from("drum_cables")
+          .update({ curr_length: newAvailable })
+          .eq("id", transaction.drum_id.id);
+
+        if (updateError) throw updateError;
+      }
+
+      // Delete all transactions in this group
+      const { error: deleteError } = await supabase
+        .from("cable_transactions")
+        .delete()
+        .in(
+          "id",
+          group.transactions.map((t) => t.id)
+        );
+
+      if (deleteError) throw deleteError;
+
+      toast.success(
+        `Reversed ${group.transactions.length} transaction(s) successfully`
+      );
+
+      // Refresh the page to see updated data
+      window.location.reload();
+    } catch (error) {
+      console.error("Error reversing transactions:", error);
+      toast.error("Failed to reverse transactions. Please try again.");
+    } finally {
+      setIsReversing(false);
+    }
+  };
 
   return (
     <div className="dark:bg-[#0b1220] border dark:border-[#1f2937] shadow-lg rounded-lg p-4">
@@ -83,7 +147,7 @@ export function TransactionGroupCard({
         </div>
 
         {/* Download Button */}
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-end gap-2">
           {hasDownloadableContent && (
             <button
               onClick={() => onDownload(group, idx)}
@@ -95,11 +159,35 @@ export function TransactionGroupCard({
               {isDownloading ? "Downloading..." : "Download all"}
             </button>
           )}
+          {isAdmin && (
+            <button
+              onClick={handleReverseTransactions}
+              disabled={isReversing}
+              className="flex items-center justify-center gap-1 px-2 py-1 rounded text-xs text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition"
+              title="Reverse transactions and restore cable to drums"
+            >
+              <Trash2 size={12} />
+              {isReversing ? "Reversing..." : "Reverse"}
+            </button>
+          )}
         </div>
       </div>
 
       {/* Transactions Table */}
       <TransactionTable transactions={group.transactions} />
+
+      {/* Reverse Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showConfirmModal}
+        title="Reverse Transactions"
+        message={`Are you sure you want to reverse ${group.transactions.length} transaction(s)?`}
+        confirmText="Reverse"
+        cancelText="Cancel"
+        isDangerous={true}
+        isLoading={isReversing}
+        onConfirm={confirmReverseTransactions}
+        onCancel={() => setShowConfirmModal(false)}
+      />
     </div>
   );
 }
