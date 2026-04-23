@@ -78,12 +78,22 @@ export function TransactionGroupCard({
         // Add back the cut length
         const newAvailable = (drum?.curr_length || 0) + transaction.length_cut;
 
-        const { error: updateError } = await supabase
+        const { data: updateData, error: updateError } = await supabase
           .from("drum_cables")
           .update({ curr_length: newAvailable })
-          .eq("id", transaction.drum_id.id);
+          .eq("id", transaction.drum_id.id)
+          .select()
+          .single();
 
         if (updateError) throw updateError;
+        if (updateData && updateData.curr_length === updateData.initial_length) { 
+          const { error: updateOpenError } = await supabase 
+            .from("drum_cables")
+            .update({ open: false })
+            .eq("id", transaction.drum_id.id);
+          if (updateOpenError) throw updateOpenError;
+        }
+        
       }
 
       // Delete all transactions in this group

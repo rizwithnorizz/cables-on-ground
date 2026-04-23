@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
         items: {
             brand: number;
             type: number;
+            drum_id: string;
             size: string;
             available: number;
             cutLength: string;
@@ -69,6 +70,7 @@ export async function POST(request: NextRequest) {
         (item, index) =>
         `\n${index + 1}. ${brands.find((b) => b.id === item.brand)?.brand_name}
         ${item.size} - ${types.find((t) => t.id === item.type)?.type_name}
+        Drum ID: ${item.drum_id ? item.drum_id : "N/A"}
         Drum: ${item.available}m 
         Customer: ${item.cutLength}m
         Balance: ${item.available - parseFloat(item.cutLength)}m`

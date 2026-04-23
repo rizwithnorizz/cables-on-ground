@@ -136,7 +136,7 @@ export function ReserveFilters({
                 value={String(drum.id)}
                 className="dark:bg-[#0b1220] dark:text-white"
               >
-                {drum.available}m available - FROM {drum.curr_length}m
+                {drum.available}m available - FROM {drum.curr_length}m : {drum.drum_id ? drum.drum_id : "Unnamed Drum"}
               </option>
             ))}
           </select>
