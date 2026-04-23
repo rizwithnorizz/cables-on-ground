@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 type WhatsAppMessagePayload = {
   messaging_product: string;
   recipient_type: string;
+  laborer: string;
   to: string;
   type: string;
   text?: {
@@ -20,6 +21,7 @@ export async function POST(request: NextRequest) {
       items,
       brands,
       types,
+      laborerName,
     }: {
         transactionRef: string;
         phoneNumber: string;
@@ -33,6 +35,7 @@ export async function POST(request: NextRequest) {
         }[];
         brands: { id: number; brand_name: string }[];
         types: { id: number; type_name: string }[];
+        laborerName: string;
     } = await request.json();
 
     // Validate required fields
@@ -58,8 +61,9 @@ export async function POST(request: NextRequest) {
 
     // Format the message
     const message = `
-    Reference: ${transactionRef || "N/A"}
+    Hello ${laborerName},
     New Cable Cutting Request:  
+    Reference: ${transactionRef || "N/A"}
     ${items
       .map(
         (item, index) =>
@@ -76,6 +80,7 @@ export async function POST(request: NextRequest) {
       messaging_product: "whatsapp",
       recipient_type: "individual",
       to: phoneNumber,
+      laborer: laborerName,
       type: "text",
       text: {
         preview_url: false,

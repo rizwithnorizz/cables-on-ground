@@ -256,6 +256,7 @@ export default function CutList() {
     items: CutItem[],
   ) {
     const phoneNumber = selectedLaborer?.mobile_no;
+    const laborerName = selectedLaborer?.name;
     const response = await fetch("/api/whatsapp/send", {
       method: "POST",
       headers: {
@@ -267,6 +268,7 @@ export default function CutList() {
         items,
         brands,
         types,
+        laborerName,
       }),
     });
 
