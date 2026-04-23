@@ -107,6 +107,13 @@ export default function CutList() {
       if (checkInitiatedMessage(selectedLaborer.last_initiated)) {
         console.log("Last message to this laborer was more than 1 day ago");
         //sendInitiatedMessage();
+        // const { data: supabaseRes, error: supabaseError } = await supabase
+        //     .from("laborers")
+        //     .update({ last_initiated: new Date().toISOString() })
+        //     .eq("id", selectedLaborer.id);
+        // if (supabaseError) {
+        //   console.error("Supabase update error:", supabaseError);
+        // }
       }
     }
   }, [selectedLaborer]);
