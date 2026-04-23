@@ -8,6 +8,7 @@ type Laborer = {
   name: string;
   mobile_no: string;
   default: boolean;
+  last_initiated: string;
 };
 
 type LaborerDropdownProps = {

@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
     // Format the message
     const message = `
     Hello ${laborerName},
-    New Cable Cutting Request:  
     Reference: ${transactionRef || "N/A"}
+    New Cable Cutting Request:  
     ${items
       .map(
         (item, index) =>

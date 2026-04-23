@@ -37,8 +37,8 @@ type Laborers = {
   name: string;
   mobile_no: string;
   default: boolean;
-}
-
+  last_initiated: string;
+};
 
 type CableType = { id: number; type_name: string };
 type CableBrand = { id: number; brand_name: string };
@@ -79,6 +79,38 @@ export default function CutList() {
     };
   }, []);
 
+  const checkInitiatedMessage = (date: string) => {
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const lastInitiated = new Date(date);
+    return lastInitiated < oneDayAgo;
+  };
+
+  useEffect(() => {
+    const sendInitiatedMessage = async () => {
+      const response = await fetch("/api/whatsapp/send/initiate-laborer", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            phoneNumber: selectedLaborer?.mobile_no,
+            laborerName: selectedLaborer?.name,
+            laborerId: selectedLaborer?.id,
+          }),
+        });
+      const data = await response.json();
+      if (!response.ok) {
+        console.error("Failed to send initiated message:", data);
+      }
+    }
+    if (selectedLaborer) {
+      if (checkInitiatedMessage(selectedLaborer.last_initiated)) {
+        console.log("Last message to this laborer was more than 1 day ago");
+        //sendInitiatedMessage();
+      }
+    }
+  }, [selectedLaborer]);
+
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -104,13 +136,14 @@ export default function CutList() {
           supabase
             .from("laborer")
             .select("*")
-            .order("name", { ascending: true }),
+            .order("default", { ascending: false }),
         ]);
         if (laborersRes.error) {
           toast.error("Failed to load laborers");
           throw laborersRes.error;
         }
         const laborersData = laborersRes.data ?? [];
+
         setLaborers(laborersData);
         // Set default laborer on load
         const defaultLaborer = laborersData.find((l) => l.default);
@@ -252,12 +285,10 @@ export default function CutList() {
       prev.map((i) => (i.cut_version === cut_version ? { ...i, ...patch } : i)),
     );
 
-  async function sendWhatsAppMessage(
-    items: CutItem[],
-  ) {
+  async function sendWhatsAppMessage(items: CutItem[]) {
     const phoneNumber = selectedLaborer?.mobile_no;
     const laborerName = selectedLaborer?.name;
-    const response = await fetch("/api/whatsapp/send", {
+    const response = await fetch("/api/whatsapp/send/cut-request", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -350,13 +381,13 @@ export default function CutList() {
             .eq("drum_id", it.id)
             .limit(1)
             .single();
-            
+
           if (!checkOtherReservation) {
-          const { error: updateErr } = await supabase
-            .from("drum_cables")
-            .update({ reserved: false })
-            .eq("id", it.id);
-          if (updateErr) throw updateErr;
+            const { error: updateErr } = await supabase
+              .from("drum_cables")
+              .update({ reserved: false })
+              .eq("id", it.id);
+            if (updateErr) throw updateErr;
           }
         }
       }
@@ -388,7 +419,9 @@ export default function CutList() {
   return (
     <div className="p-8 mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold dark:text-white text-blue-500">Cutting</h1>
+        <h1 className="text-3xl font-bold dark:text-white text-blue-500">
+          Cutting
+        </h1>
       </div>
 
       <div className="space-y-6 bg-card dark:bg-[#111827]/80 border border-[#0047FF]/30 rounded-3xl p-8 shadow-lg shadow-[#0047FF]/10">
@@ -444,7 +477,11 @@ export default function CutList() {
                     .from("reservation")
                     .select("length")
                     .eq("drum_id", candidate.id);
-                  const totalReserved = reservations?.reduce((sum, r) => sum + (r.length ?? 0), 0) ?? 0;
+                  const totalReserved =
+                    reservations?.reduce(
+                      (sum, r) => sum + (r.length ?? 0),
+                      0,
+                    ) ?? 0;
                   if (error) throw error;
                   return {
                     cable: candidate,
@@ -456,13 +493,17 @@ export default function CutList() {
 
               // Create map of cable id to total reserved length
               const reservationMap = new Map(
-                candidatesWithReservations.map((cr) => [cr.cable.id, cr.reservationLength])
+                candidatesWithReservations.map((cr) => [
+                  cr.cable.id,
+                  cr.reservationLength,
+                ]),
               );
 
               // Filter candidates: exclude drums with no available length after reservations
               const validCandidates = candidatesWithReservations
                 .filter(({ cable, reservationLength }) => {
-                  const available = (cable.curr_length ?? 0) - reservationLength;
+                  const available =
+                    (cable.curr_length ?? 0) - reservationLength;
                   return available > 0;
                 })
                 .map(({ cable }) => cable);
@@ -482,9 +523,7 @@ export default function CutList() {
 
               if (enough.length > 0) {
                 // Prefer opened drums (ones that have been partially used)
-                const opened = enough.filter(
-                  (c) => (c.open === true),
-                );
+                const opened = enough.filter((c) => c.open === true);
 
                 if (opened.length > 0) {
                   // Sort opened drums by remaining length (pick one with least remaining)
@@ -563,22 +602,18 @@ export default function CutList() {
           // If current selection was deleted, select the default or first one
           if (!updatedLaborers.find((l) => l.id === selectedLaborer?.id)) {
             const defaultLaborer = updatedLaborers.find((l) => l.default);
-            setSelectedLaborer(
-              defaultLaborer || updatedLaborers[0] || null
-            );
+            setSelectedLaborer(defaultLaborer || updatedLaborers[0] || null);
           } else {
             // Update selected laborer if its properties changed (e.g., default status)
             const updatedSelected = updatedLaborers.find(
-              (l) => l.id === selectedLaborer?.id
+              (l) => l.id === selectedLaborer?.id,
             );
             if (updatedSelected) {
               setSelectedLaborer(updatedSelected);
             }
           }
         }}
-  
-
-    />
+      />
     </div>
   );
 }

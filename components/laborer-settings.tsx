@@ -16,6 +16,7 @@ type Laborer = {
   name: string;
   mobile_no: string;
   default: boolean;
+  last_initiated: string;
 };
 
 type LaborerSettingsProps = {
@@ -58,7 +59,7 @@ export default function LaborerSettings({
       const { data, error } = await supabase
         .from("laborer")
         .select("*")
-        .order("name", { ascending: true });
+        .order("default", { ascending: false });
 
       if (error) throw error;
       setLaborers(data || []);
