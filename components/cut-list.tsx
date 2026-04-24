@@ -115,7 +115,6 @@ export default function CutList() {
     }
     if (selectedLaborer) {
       if (checkInitiatedMessage(selectedLaborer.last_initiated)) {
-        console.log("Last message to this laborer was more than 1 day ago");
         sendInitiatedMessage();
       }
     }
