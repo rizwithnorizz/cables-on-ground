@@ -104,7 +104,7 @@ export default function CutList() {
       }
 
       if (selectedLaborer) {
-        const { data: supabaseRes, error: supabaseError } = await supabase
+        const { error: supabaseError } = await supabase
             .from("laborer")
             .update({ last_initiated: new Date().toISOString() })
             .eq("id", selectedLaborer.id);
