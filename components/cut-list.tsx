@@ -104,7 +104,7 @@ export default function CutList() {
       }
 
       if (selectedLaborer) {
-        const { data: supabaseRes, error: supabaseError } = await supabase
+        const { error: supabaseError } = await supabase
             .from("laborer")
             .update({ last_initiated: new Date().toISOString() })
             .eq("id", selectedLaborer.id);
@@ -305,11 +305,11 @@ export default function CutList() {
       },
       body: JSON.stringify({
         transactionRef,
-        phoneNumber,
+        phoneNumber: selectedLaborer?.mobile_no,
         items,
         brands,
         types,
-        laborerName,
+        laborerName: selectedLaborer?.name,
       }),
     });
 
@@ -374,11 +374,22 @@ export default function CutList() {
             },
           ]);
         if (insertErr) throw insertErr;
-        const { error: updateErr } = await supabase
+        const { data: updateCable, error: updateErr } = await supabase
           .from("drum_cables")
           .update({ curr_length: newBalance })
-          .eq("id", it.id);
+          .eq("id", it.id)
+          .select()
+          .single();
         if (updateErr) throw updateErr;
+        
+        if (updateCable && updateCable.open === false) {
+          const { error: openErr } = await supabase
+            .from("drum_cables")            
+            .update({ open: true })
+            .eq("id", it.id);
+          if (openErr) throw openErr;
+        }
+        
         if (reservationIdInput && it.reservationId) {
           const { error: deleteErr } = await supabase
             .from("reservation")

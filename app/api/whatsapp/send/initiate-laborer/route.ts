@@ -43,7 +43,6 @@ export async function POST(request: NextRequest) {
 
     const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
     const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-
     if (!accessToken || !phoneNumberId) {
       console.error(
         "WhatsApp credentials not configured in environment variables"
