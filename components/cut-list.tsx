@@ -80,7 +80,7 @@ export default function CutList() {
   }, []);
 
   const checkInitiatedMessage = (date: string) => {
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const oneDayAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
     const lastInitiated = new Date(date);
     return lastInitiated < oneDayAgo;
   };
