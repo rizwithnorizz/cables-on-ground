@@ -99,9 +99,9 @@ export async function POST(request: NextRequest) {
         { status: response.status }
       );
     }
-    const supabase = new SupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    const supabase = new SupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!);
     const { data: supabaseRes, error: supabaseError } = await supabase
-        .from("laborers")
+        .from("laborer")
         .update({ last_initiated: new Date().toISOString() })
         .eq("id", laborerId);
     if (supabaseError) {
