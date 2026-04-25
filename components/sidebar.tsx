@@ -50,7 +50,7 @@ export function Sidebar({
   
     
 
-  const sidebarItems = isAuthenticated ? (isAdmin ? allSidebarItems : userSidebarItems) : publicSidebarItems;
+  const sidebarItems = isAdmin ? allSidebarItems : userSidebarItems;
   
 
 
