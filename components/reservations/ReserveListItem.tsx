@@ -33,6 +33,7 @@ export function ReserveListItem({
       <div className="flex-1">
         <Input
           type="number"
+          disabled={true}
           placeholder="Length"
           value={item.reserveLength}
           onChange={(e) => onLengthChange(e.target.value)}
