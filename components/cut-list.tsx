@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase/client";
+import { generateJWT, validateJWT, getJWTKey } from "@/lib/jwt-utils";
 import { CutFilters, CutListPanel } from "./cutting";
 import { LaborerDropdown } from "@/components/laborer-dropdown";
 import LaborerSettings from "@/components/laborer-settings";
@@ -79,44 +80,55 @@ export default function CutList() {
     };
   }, []);
 
-  const checkInitiatedMessage = (date: string) => {
-    const oneDayAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
-    const lastInitiated = new Date(date);
-    return lastInitiated < oneDayAgo;
-  };
+
 
   useEffect(() => {
     const sendInitiatedMessage = async () => {
-      const response = await fetch("/api/whatsapp/send/initiate-laborer", {
+      if (!selectedLaborer) return;
+
+      try {
+        // Check if valid JWT exists in localStorage
+        const jwtKey = getJWTKey(selectedLaborer.mobile_no);
+        const storedJWT = localStorage.getItem(jwtKey);
+        
+        let isExpired = true;
+        if (storedJWT) {
+          const phoneNumber = await validateJWT(storedJWT);
+          isExpired = !phoneNumber;
+        }
+
+        // Only send message if JWT is expired or doesn't exist
+        if (!isExpired) {
+          return;
+        }
+
+        // Generate new JWT and send message
+        const newJWT = await generateJWT(selectedLaborer.mobile_no);
+        localStorage.setItem(jwtKey, newJWT);
+
+        const response = await fetch("/api/whatsapp/send/initiate-laborer", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            phoneNumber: selectedLaborer?.mobile_no,
-            laborerName: selectedLaborer?.name,
-            laborerId: selectedLaborer?.id,
+            phoneNumber: selectedLaborer.mobile_no,
+            laborerName: selectedLaborer.name,
+            laborerId: selectedLaborer.id,
           }),
         });
-      const data = await response.json();
-      if (!response.ok) {
-        console.error("Failed to send initiated message:", data);
-      }
 
-      if (selectedLaborer) {
-        const { error: supabaseError } = await supabase
-            .from("laborer")
-            .update({ last_initiated: new Date().toISOString() })
-            .eq("id", selectedLaborer.id);
-        if (supabaseError) {
-          console.error("Supabase update error:", supabaseError);
+        const data = await response.json();
+        if (!response.ok) {
+          console.error("Failed to send initiated message:", data);
         }
+      } catch (error) {
+        console.error("Error in sendInitiatedMessage:", error);
       }
-    }
+    };
+
     if (selectedLaborer) {
-      if (checkInitiatedMessage(selectedLaborer.last_initiated)) {
-        sendInitiatedMessage();
-      }
+      sendInitiatedMessage();
     }
   }, [selectedLaborer]);
 
@@ -527,7 +539,6 @@ export default function CutList() {
                   return available > 0;
                 })
                 .map(({ cable }) => cable);
-              console.log(validCandidates);
               if (validCandidates.length === 0) {
                 toast.error("No available drums (all have unmet reservations)");
                 return;
@@ -564,6 +575,13 @@ export default function CutList() {
                 );
                 return;
               }
+                setAvailableCables((prev) =>
+                prev.map((c) =>
+                  c.id === chosen.id
+                  ? { ...c, curr_length: (c.curr_length ?? 0) - L }
+                  : c,
+                ),
+                );
               addItemFromDrum(chosen.id, String(L));
             }}
             onResetClick={() => {

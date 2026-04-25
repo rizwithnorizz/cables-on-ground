@@ -314,7 +314,13 @@ export default function ReserveList() {
                 toast.error(`Reserve length exceeds available length on this drum (${drum.available}m)`);
                 return;
               }
-
+               setAvailableCables((prev) =>
+                prev.map((c) =>
+                  c.id === Number(selectedDrumId)
+                  ? { ...c, available: (c.available ?? 0) - L, curr_length: (c.curr_length ?? 0) - L }
+                  : c,
+                ),
+                );
               await addItemFromDrum(Number(selectedDrumId), String(L));
               setInputLength("");
               setSelectedDrumId("");
