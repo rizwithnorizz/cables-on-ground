@@ -136,8 +136,16 @@ export default function ReserveList() {
   }, [brandFilter, typeFilter, sizeFilter]);
 
   useEffect(() => {
-    const randomId = Math.floor(Math.random() * 100000);
-    setNextReservationId(randomId);
+    const getNextID = async () => { 
+      const { data } = await supabase 
+        .from("reservation")
+        .select("id")
+        .order("id", { ascending: false })
+        .limit(1)
+        .single();
+     setNextReservationId(((data?.id ?? 0) + 1) + 10000);
+    };
+    getNextID();
   }, []);
 
   const availableSizes = useMemo(() => {
