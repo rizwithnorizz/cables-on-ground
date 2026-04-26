@@ -10,6 +10,7 @@ type DrumCable = {
   curr_length: number;
   initial_length: number;
   testcertificate?: string | null;
+  disabled: boolean;
 };
 
 type DrumsGridProps = {
