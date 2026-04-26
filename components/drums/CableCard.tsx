@@ -8,6 +8,7 @@ type DrumCable = {
   curr_length: number;
   initial_length: number;
   testcertificate?: string | null;
+  disabled: boolean;
 };
 
 type CableCardProps = {
@@ -31,7 +32,9 @@ export function CableCard({ cable, onSelect }: CableCardProps) {
         cable.reserved ? "bg-green-600 dark:shadow-[#00FF00]/50" : "dark:shadow-[#0047FF]/10"
       } ${
         !cable.testcertificate ? "bg-red-500" : " "
-      } w-full h-full p-4 flex flex-col items-center justify-center transition-transform hover:scale-[1.02]`}
+      } w-full h-full p-4 flex flex-col items-center justify-center transition-transform hover:scale-[1.02]
+      ${cable.disabled ? "opacity-50 border-lg border-red-500" : "cursor-pointer"}`}
+      
     >
       <div className={`text-sm items-center flex justify-center text-foreground ${cable.reserved ? "text-white" : ""}`}>
         {cable.curr_length} M

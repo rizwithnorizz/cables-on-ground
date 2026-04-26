@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "./auth-context";
+import { ConfirmationModal } from "./confirmation-modal";
 
 type Transaction = {
   id: bigint;
@@ -32,6 +33,7 @@ type DrumCable = {
   curr_length: number;
   initial_length: number;
   testcertificate?: string | null;
+  disabled?: boolean;
 };
 
 type BrandOption = {
@@ -96,6 +98,8 @@ export default function CableModal({
   const [loadingSmallCables, setLoadingSmallCables] = useState(false);
   const [selectedSmallCableId, setSelectedSmallCableId] = useState<string>("");
   const [isCopyingCert, setIsCopyingCert] = useState(false);
+  const [showDisableConfirm, setShowDisableConfirm] = useState(false);
+  const [isDisabling, setIsDisabling] = useState(false);
 
   useEffect(() => {
     if (cable) {
@@ -469,10 +473,33 @@ export default function CableModal({
     }
   };
 
+  const handleDisableCable = async () => {
+    if (!cable) return;
+    
+    setIsDisabling(true);
+    try {
+      const { error } = await supabase
+        .from("drum_cables")
+        .update({ disabled: !cable.disabled })
+        .eq("id", cable.id);
+
+      if (error) throw error;
+
+      // Update local state
+      cable.disabled = !cable.disabled;
+      setShowDisableConfirm(false);
+    } catch (err) {
+      console.error("Failed to disable cable", err);
+      alert(err instanceof Error ? err.message : "Failed to disable cable");
+    } finally {
+      setIsDisabling(false);
+    }
+  };
+
 
   return (
     <>
-    <div className="fixed md:ml-64 inset-0 flex items-center justify-center z-[999]">
+    <div className="fixed md:ml-64 inset-0 flex items-center justify-center z-[998]">
       <div className="absolute inset-0 bg-black/60" onClick={() => { onClose(); setShowSmallCableSelector(false);}} />
 
       <div className="relative z-10 w-full max-w-5xl mx-4 bg-white dark:bg-[#0f1724] rounded-2xl border dark:border-[#0047FF]/30 border-gray-200 p-6 shadow-lg dark:shadow-lg flex gap-6 max-h-[85vh] overflow-hidden">
@@ -582,6 +609,26 @@ export default function CableModal({
                 </div>
               )}
             </div>
+
+            {isAuthenticated && isAdmin && (
+                <div className="flex items-center gap-4 ">
+                  <div className="text-sm text-gray-700 dark:text-gray-400">Disable Cable</div>
+                  <button
+                    type="button"
+                    onClick={() => setShowDisableConfirm(true)}
+                    disabled={isDisabling}
+                    className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#111827] disabled:opacity-50 ${
+                      cable.disabled ? "bg-red-500" : "bg-gray-300 dark:bg-gray-600"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        cable.disabled ? "translate-x-4" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+            )}
 
             <div className="space-y-3">
               {isEditingDetails ? (
@@ -927,6 +974,18 @@ export default function CableModal({
         </div>
       </div>
     )}
+
+    <ConfirmationModal
+      isOpen={showDisableConfirm}
+      title={cable?.disabled ? "Enable Cable" : "Disable Cable"}
+      message={cable?.disabled ? `Are you sure you want to enable cable ${cable?.drum_id}?` : `Are you sure you want to disable cable ${cable?.drum_id}?`}
+      confirmText={cable?.disabled ? "Enable" : "Disable"}
+      cancelText="Cancel"
+      onConfirm={handleDisableCable}
+      onCancel={() => setShowDisableConfirm(false)}
+      isLoading={isDisabling}
+      isDangerous={false}
+    />
     </>
   );
 }

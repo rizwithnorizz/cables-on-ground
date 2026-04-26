@@ -15,6 +15,7 @@ type DrumCable = {
   curr_length: number;
   available: number;
   initial_length: number;
+  disabled: boolean;
 };
 
 type ReserveItem = {
@@ -163,6 +164,7 @@ export default function ReserveList() {
       if (brandFilter && String(c.brand) !== String(brandFilter)) return false;
       if (typeFilter && String(c.type) !== String(typeFilter)) return false;
       if (sizeFilter && c.size !== sizeFilter) return false;
+      if (c.disabled) return false;
       return (c.curr_length ?? 0) > 0;
     });
   }, [availableCables, brandFilter, typeFilter, sizeFilter]);
@@ -204,8 +206,43 @@ export default function ReserveList() {
     }, 700);
   };
 
-  const removeItem = (reserve_version: number) =>
-    setItems((prev) => prev.filter((i) => i.reserve_version !== reserve_version));
+  const removeItem = (reserve_version: number) => {
+    const itemToRemove = items.find((i) => i.reserve_version === reserve_version);
+    if (!itemToRemove) return;
+
+    // Return the reserved amount back to availableCables
+    const reserveAmount = Number(itemToRemove.reserveLength);
+    setAvailableCables((prev) =>
+      prev.map((c) =>
+        c.id === itemToRemove.id
+          ? { ...c, curr_length: c.curr_length + reserveAmount }
+          : c,
+      ),
+    );
+
+    // Remove item and recalculate available lengths for remaining items (O(n) instead of O(n²))
+    setItems((prev) => {
+      const filtered = prev.filter((i) => i.reserve_version !== reserve_version);
+      const lastItemPerCable = new Map<number, ReserveItem>();
+
+      return filtered.map((item) => {
+        const previousItem = lastItemPerCable.get(item.id);
+        lastItemPerCable.set(item.id, item);
+
+        if (!previousItem) {
+          return item; // First item from this cable
+        }
+
+        const newAvailable =
+          previousItem.available - Number(previousItem.reserveLength);
+
+        return newAvailable === item.available
+          ? item
+          : { ...item, available: newAvailable };
+      });
+    });
+  };
+
   const updateItem = (reserve_version: number, patch: Partial<ReserveItem>) =>
     setItems((prev) =>
       prev.map((i) => (i.reserve_version === reserve_version ? { ...i, ...patch } : i)),

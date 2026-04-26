@@ -16,6 +16,7 @@ type DrumCable = {
   curr_length: number;
   initial_length: number;
   open: boolean;
+  disabled: boolean;
 };
 
 type CutItem = {
@@ -212,6 +213,8 @@ export default function CutList() {
       }
       if (reservations && reservations.length > 0) {
         const newItems: CutItem[] = [];
+        const cableMap = new Map<string, CutItem>();
+
         for (const res of reservations) {
           const { data: cable, error: cableErr } = await supabase
             .from("drum_cables")
@@ -222,23 +225,29 @@ export default function CutList() {
           if (cableErr) throw cableErr;
           if (cable) {
             const version = nextVersion.current++;
-            setItems((prev) => [
-              ...prev,
-              {
-                id: cable.id,
-                size: cable.size,
-                type: cable.type,
-                brand: cable.brand,
-                drum_id: cable.drum_id,
-                available: cable.curr_length,
-                cutLength: String(res.length),
-                refNo: reservationIdInput,
-                cut_version: version,
-                reservationId: res.id,
-              },
-            ]);
+            const previousItem = cableMap.get(cable.id);
+            const available = previousItem
+              ? previousItem.available - Number(previousItem.cutLength)
+              : cable.curr_length;
+
+            const newItem: CutItem = {
+              id: cable.id,
+              size: cable.size,
+              type: cable.type,
+              brand: cable.brand,
+              drum_id: cable.drum_id,
+              available,
+              cutLength: String(res.length),
+              refNo: reservationIdInput,
+              cut_version: version,
+              reservationId: res.id,
+            };
+            newItems.push(newItem);
+            cableMap.set(cable.id, newItem);
           }
         }
+        
+        setItems((prev) => [...prev, ...newItems]);
         toast.success(`Found ${newItems.length} cable(s) from reservation`);
       } else {
         toast.error("No reservations found with this ID");
@@ -287,8 +296,43 @@ export default function CutList() {
     }, 700);
   };
 
-  const removeItem = (cut_version: number) =>
-    setItems((prev) => prev.filter((i) => i.cut_version !== cut_version));
+  const removeItem = (cut_version: number) => {
+    const itemToRemove = items.find((i) => i.cut_version === cut_version);
+    if (!itemToRemove) return;
+
+    // Return the cut amount back to availableCables
+    const cutAmount = Number(itemToRemove.cutLength);
+    setAvailableCables((prev) =>
+      prev.map((c) =>
+        c.id === itemToRemove.id
+          ? { ...c, curr_length: c.curr_length + cutAmount }
+          : c,
+      ),
+    );
+
+    // Remove item and recalculate available lengths for remaining items (O(n) instead of O(n²))
+    setItems((prev) => {
+      const filtered = prev.filter((i) => i.cut_version !== cut_version);
+      const lastItemPerCable = new Map<string, CutItem>();
+
+      return filtered.map((item) => {
+        const previousItem = lastItemPerCable.get(item.id);
+        lastItemPerCable.set(item.id, item);
+
+        if (!previousItem) {
+          return item; // First item from this cable
+        }
+
+        const newAvailable =
+          previousItem.available - Number(previousItem.cutLength);
+
+        return newAvailable === item.available
+          ? item
+          : { ...item, available: newAvailable };
+      });
+    });
+  };
+
   const updateItem = (cut_version: number, patch: Partial<CutItem>) =>
     setItems((prev) =>
       prev.map((i) => (i.cut_version === cut_version ? { ...i, ...patch } : i)),
@@ -522,9 +566,8 @@ export default function CutList() {
               // Filter candidates: exclude drums with no available length after reservations
               const validCandidates = candidatesWithReservations
                 .filter(({ cable, reservationLength }) => {
-                  const available =
-                    (cable.curr_length ?? 0) - reservationLength;
-                  return available > 0;
+                  const available = (cable.curr_length ?? 0) - reservationLength;
+                  return available > 0 && !cable.disabled;
                 })
                 .map(({ cable }) => cable);
               if (validCandidates.length === 0) {
