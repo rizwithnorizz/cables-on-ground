@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase/client";
-import { CutFilters, CutListPanel } from "./cutting";
+import { CutFilters, CutListPanel, PrintOrder } from "./cutting";
 import { LaborerDropdown } from "@/components/laborer-dropdown";
 import LaborerSettings from "@/components/laborer-settings";
 
@@ -683,7 +683,14 @@ export default function CutList() {
               onClear={clearAll}
             />
 
-            <div className="mt-4">
+            <div className="mt-4 space-y-3">
+              <PrintOrder
+                items={itemsWithAvailable}
+                transactionRef={transactionRef}
+                selectedLaborer={selectedLaborer}
+                brands={brands}
+                types={types}
+              />
               <LaborerDropdown
                 laborers={laborers}
                 selectedLaborer={selectedLaborer}
