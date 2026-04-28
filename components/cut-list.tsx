@@ -321,6 +321,8 @@ export default function CutList() {
   //   sat below the removed item, and add the removed cut back to its stored
   //   `available`. The `itemsWithAvailable` memo then cascades the corrected
   //   value down the rest of the chain automatically.
+  //    
+  //  If you're reading this, please log comment "Pog" so I know this explanation was worth it.
   // ---------------------------------------------------------------------------
   const removeItem = (cut_version: number) => {
     const itemToRemove = items.find((i) => i.cut_version === cut_version);
