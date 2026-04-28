@@ -63,16 +63,16 @@ export function PrintOrder({
     const tableRows = items
       .map((item) => {
         const balance = Number(item.available) - Number(item.cutLength);
-        const cutLength = Number(item.cutLength).toFixed(2);
-        const currentLength = Number(item.available).toFixed(2);
-        const balanceLength = balance.toFixed(2);
+        const cutLength = Math.floor(Number(item.cutLength));
+        const currentLength = Math.floor(Number(item.available));
+        const balanceLength = Math.floor(balance);
 
         return `
           <div class="item-row">
             <div class="item-code">${item.drum_id}</div>
             <div class="item-header">
               <div class="item-details">
-                ${getBrandName(item.brand)} | ${getTypeName(item.type)} | ${item.size}
+                ${getBrandName(item.brand)} | <b>${getTypeName(item.type)} | ${item.size}</b>
               </div>
               <div class="current-length">${currentLength}m</div>
             </div>
@@ -226,7 +226,7 @@ export function PrintOrder({
         <body>
           <div class="receipt-container">
             <div class="header">
-              <div class="title">CUTTING ORDER</div>
+              <div class="title">CUTTING ADVICE</div>
               <div class="subtitle">Cables on Ground</div>
             </div>
 
