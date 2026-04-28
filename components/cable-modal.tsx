@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "./auth-context";
 import { ConfirmationModal } from "./confirmation-modal";
+import { LucideFileWarning, TriangleAlert } from "lucide-react";
 
 type Transaction = {
   id: bigint;
@@ -513,6 +514,11 @@ export default function CableModal({
               <div className="text-sm dark:text-gray-400">
                 {brandName ?? "Unknown brand"} · {typeName ?? "Unknown type"}
               </div>
+              {cable.disabled && (
+                <div className="mt-2 text-sm text-red-700 dark:text-red-300 p-2 rounded flex gap-2 items-center">
+                  <TriangleAlert/> This cable is disabled.
+                </div>
+              )}
             </div>
             <div className="flex gap-2">
               {isAuthenticated && isAdmin &&  (

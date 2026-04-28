@@ -34,6 +34,7 @@ export function CableCard({ cable, onSelect }: CableCardProps) {
         !cable.testcertificate ? "bg-red-500" : " "
       } w-full h-full p-4 flex flex-col items-center justify-center transition-transform hover:scale-[1.02]
       ${cable.disabled ? "opacity-50 border-lg border-red-500" : "cursor-pointer"}`}
+      title={cable.disabled ? "This cable is disabled" : ""}
       
     >
       <div className={`text-sm items-center flex justify-center text-foreground ${cable.reserved ? "text-white" : ""}`}>
