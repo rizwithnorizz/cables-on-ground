@@ -69,7 +69,7 @@ export function PrintOrder({
 
         return `
           <div class="item-row">
-            <div class="item-code">${item.drum_id}</div>
+            <div class="item-code">${item.drum_id || "BALANCE CABLE"}</div>
             <div class="item-header">
               <div class="item-details">
                 ${getBrandName(item.brand)} | <b>${getTypeName(item.type)} | ${item.size}</b>
@@ -226,7 +226,7 @@ export function PrintOrder({
         <body>
           <div class="receipt-container">
             <div class="header">
-              <div class="title">CUTTING ADVICE</div>
+              <div class="title">CUTTING REQUEST</div>
               <div class="subtitle">Cables on Ground</div>
             </div>
 
