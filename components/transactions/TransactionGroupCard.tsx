@@ -1,7 +1,8 @@
 "use client";
 
-import { Edit, Download, Trash2 } from "lucide-react";
+import { Edit, Download, Trash2, Printer } from "lucide-react";
 import { TransactionTable } from "./TransactionTable";
+import { PrintTransactions } from "./PrintTransactions";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "../auth-context";
 import { toast } from "react-hot-toast";
@@ -15,7 +16,7 @@ type Transaction = {
     drum_id: string;
     size: string;
     type: { type_name: string };
-    brand: { brand_name: string };
+    brand: { id: number; brand_name: string };
     testcertificate?: string | null;
   };
   length_cut: number;
@@ -51,13 +52,14 @@ export function TransactionGroupCard({
   const { isAuthenticated, isAdmin } = useAuth();
   const [isReversing, setIsReversing] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showPrintPanel, setShowPrintPanel] = useState(false);
+  const [autoprint, setAutoprint] = useState(false);
 
   const handleReverseTransactions = async () => {
     if (!isAdmin || !isAuthenticated) {
       toast.error("Only admins can reverse transactions");
       return;
     }
-
     setShowConfirmModal(true);
   };
 
@@ -121,6 +123,8 @@ export function TransactionGroupCard({
     }
   };
 
+   
+
   return (
     <div className="dark:bg-[#0b1220] border dark:border-[#1f2937] shadow-lg rounded-lg p-4">
       {/* Group Header */}
@@ -170,15 +174,28 @@ export function TransactionGroupCard({
             </button>
           )}
           {isAdmin && (
-            <button
-              onClick={handleReverseTransactions}
-              disabled={isReversing}
-              className="flex items-center justify-center gap-1 px-2 py-1 rounded text-xs text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition"
-              title="Reverse transactions and restore cable to drums"
-            >
-              <Trash2 size={12} />
-              {isReversing ? "Reversing..." : "Reverse"}
-            </button>
+            <>
+              <button
+                onClick={() => {
+                setShowPrintPanel(true);
+                setAutoprint(true);
+              }}
+                className="flex items-center justify-center gap-1 px-2 py-1 rounded text-xs text-white bg-green-600 hover:bg-green-700 transition"
+                title="Reprint order receipt"
+              >
+                <Printer size={12} />
+                Reprint
+              </button>
+              <button
+                onClick={handleReverseTransactions}
+                disabled={isReversing}
+                className="flex items-center justify-center gap-1 px-2 py-1 rounded text-xs text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition"
+                title="Reverse transactions and restore cable to drums"
+              >
+                <Trash2 size={12} />
+                {isReversing ? "Reversing..." : "Reverse"}
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -186,7 +203,24 @@ export function TransactionGroupCard({
       {/* Transactions Table */}
       <TransactionTable transactions={group.transactions} />
 
-      {/* Reverse Confirmation Modal */}
+      {/* Print Panel */}
+      <PrintTransactions
+            items={group.transactions.map((tx) => ({
+              drum_id: tx.drum_id.drum_id,
+              size: tx.drum_id.size,
+              type_name: tx.drum_id.type.type_name,
+              brand_id: tx.drum_id.brand.id,
+              brand_name: tx.drum_id.brand.brand_name,
+              length_cut: tx.length_cut,
+              balance_cable: tx.balance_cable,
+            }))}
+            transactionRef={group.ref_no || ""}
+            autoprint={autoprint}
+            onAutoprintComplete={() => {
+              setAutoprint(false);
+              setShowPrintPanel(false);
+            }}
+          />
       <ConfirmationModal
         isOpen={showConfirmModal}
         title="Reverse Transactions"

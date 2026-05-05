@@ -68,6 +68,7 @@ export default function CutList() {
   const [laborers, setLaborers] = useState<Laborers[]>([]);
   const [selectedLaborer, setSelectedLaborer] = useState<Laborers | null>(null);
   const [openLaborSettings, setOpenLaborSettings] = useState(false);
+  const [autoprint, setAutoprint] = useState(false);
 
   // ---------------------------------------------------------------------------
   // Derived: recompute each item's `available` by walking the list in order.
@@ -493,11 +494,16 @@ export default function CutList() {
 
       toast.success("Cuts recorded successfully.");
 
-      // Reset form state
-      setItems([]);
-      setReservationIdInput("");
-      setTransactionRef("");
-      setInputLength("");
+      // Trigger autoprint
+      setAutoprint(true);
+
+      // Reset form state after a short delay to allow print to complete
+      setTimeout(() => {
+        setItems([]);
+        setReservationIdInput("");
+        setTransactionRef("");
+        setInputLength("");
+      }, 100);
 
       // Refresh cable inventory
       const { data } = await supabase
@@ -524,6 +530,22 @@ export default function CutList() {
   };
 
   const clearAll = () => {
+    // Calculate total cuts per cable and restore them
+    const cutsByDrum = new Map<string, number>();
+    for (const item of items) {
+      const cutAmount = Number(item.cutLength) || 0;
+      cutsByDrum.set(item.id, (cutsByDrum.get(item.id) ?? 0) + cutAmount);
+    }
+
+    // Restore cable lengths
+    setAvailableCables((prev) =>
+      prev.map((c) => {
+        const cutAmount = cutsByDrum.get(c.id) ?? 0;
+        return { ...c, curr_length: c.curr_length + cutAmount };
+      })
+    );
+
+    // Clear items and form state
     setItems([]);
     setSizeFilter("");
     setTypeFilter("");
@@ -690,6 +712,8 @@ export default function CutList() {
                 selectedLaborer={selectedLaborer}
                 brands={brands}
                 types={types}
+                autoprint={autoprint}
+                onAutoprintComplete={() => setAutoprint(false)}
               />
               <LaborerDropdown
                 laborers={laborers}

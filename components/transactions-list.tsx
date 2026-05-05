@@ -23,7 +23,7 @@ type Transaction = {
     drum_id: string;
     size: string;
     type: { type_name: string };
-    brand: { brand_name: string };
+    brand: { id: number; brand_name: string };
     testcertificate?: string | null;
   };
   length_cut: number;
@@ -148,7 +148,7 @@ export default function TransactionsList() {
               drum_id,
               size,
               type ( type_name ),
-              brand ( brand_name ),
+              brand ( id, brand_name ),
               testcertificate
             ),
             length_cut,

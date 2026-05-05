@@ -1,91 +1,60 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
-import { useEffect, useRef } from "react";
-type CutItem = {
-  id: string;
-  size: string;
-  type: number;
-  brand: number;
+
+type TransactionItem = {
   drum_id: string;
-  available: number;
-  cutLength: string;
-  refNo?: string;
-  cut_version: number;
-  reservationId?: string;
+  size: string;
+  type_name: string;
+  brand_name: string;
+  brand_id: number;
+  length_cut: number;
+  balance_cable: number;
 };
 
-type CableBrand = { id: number; brand_name: string };
-type CableType = { id: number; type_name: string };
-
-interface PrintOrderProps {
-  items: CutItem[];
+interface PrintTransactionsProps {
+  items: TransactionItem[];
   transactionRef: string;
-  selectedLaborer: { id: number; name: string; mobile_no: string } | null;
-  brands: CableBrand[];
-  types: CableType[];
   autoprint?: boolean;
   onAutoprintComplete?: () => void;
 }
 
-export function PrintOrder({
+export function PrintTransactions({
   items,
   transactionRef,
-  selectedLaborer,
-  brands,
-  types,
   autoprint = false,
   onAutoprintComplete,
-}: PrintOrderProps) {
-  const brandsMap = {
-    1: "DOH",
-    3: "NEX",
-  };
+}: PrintTransactionsProps) {
   const printedRef = useRef(false);
-
-  useEffect(() => {
-    if (autoprint && items.length > 0 && !printedRef.current) {
-      printedRef.current = true;
-      setTimeout(() => {
-        handlePrint();
-        onAutoprintComplete?.();
-      }, 500);
-    }
-  }, [autoprint, onAutoprintComplete]);
-
-  // Reset printedRef when autoprint becomes false
-  useEffect(() => {
-    if (!autoprint) {
-      printedRef.current = false;
-    }
-  }, [autoprint]);
-
-  const getBrandName = (brandId: number) => {
-    return brandsMap[brandId as keyof typeof brandsMap] || `Brand ${brandId}`;
-  };
-
-  const getTypeName = (typeId: number) => {
-    return types.find((t) => t.id === typeId)?.type_name || `Type ${typeId}`;
-  };
-
   const generateHTML = () => {
     const currentDate = new Date().toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
     });
+    const brandsMap = {
+      1: "DOH",
+      3: "NEX",
+    };
+
+    const getBrandName = (brandId: number) => {
+      return brandsMap[brandId as keyof typeof brandsMap] || `Brand ${brandId}`;
+    };
+    
     const tableRows = items
       .map((item) => {
-        const balance = Number(item.available) - Number(item.cutLength);
-        const cutLength = Math.floor(Number(item.cutLength));
-        const currentLength = Math.floor(Number(item.available));
+        const available = item.balance_cable + item.length_cut;
+        const balance = available - item.length_cut;
+        const cutLength = Math.floor(item.length_cut);
+        const currentLength = Math.floor(available);
         const balanceLength = Math.floor(balance);
 
         return `
           <div class="item-row">
             <div class="item-details">
-              <b>${getBrandName(item.brand)} - ${getTypeName(item.type)} - ${item.size}</b>
+              <b>${getBrandName(item.brand_id)} - ${item.type_name} - ${item.size}</b>
             </div>
             <div class="item-header">
             <div class="item-code">${item.drum_id || "BALANCE CABLE"}</div>
@@ -113,7 +82,7 @@ export function PrintOrder({
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Cutting Order Receipt</title>
+          <title>Reprint Order</title>
           <style>
             * {
               margin: 0;
@@ -243,7 +212,7 @@ export function PrintOrder({
         <body>
           <div class="receipt-container">
             <div class="header">
-              <div class="title">CUTTING REQUEST</div>
+              <div class="title">REPRINT ORDER</div>
               <div class="subtitle">Cables on Ground</div>
             </div>
 
@@ -258,14 +227,6 @@ export function PrintOrder({
                 <span class="info-label">Ref:</span>
                 <span>${transactionRef || "N/A"}</span>
               </div>
-              ${
-                selectedLaborer
-                  ? `<div class="info-line">
-                       <span class="info-label">Laborer:</span>
-                       <span>${selectedLaborer.name}</span>
-                     </div>`
-                  : ""
-              }
             </div>
 
             <div class="divider"></div>
@@ -306,11 +267,22 @@ export function PrintOrder({
         document.body.removeChild(iframe);
       }, 500);
     }
-  };
+  };    
+  useEffect(() => {
+    if (autoprint && items.length > 0 && !printedRef.current) {
+      printedRef.current = true;
+      setTimeout(() => {
+        handlePrint();
+        onAutoprintComplete?.();
+      }, 500);
+    }
+  }, [autoprint, onAutoprintComplete, items]);
 
-  if (autoprint) {
-    return null;
-  }
+  useEffect(() => {
+    if (!autoprint) {
+      printedRef.current = false;
+    }
+  }, [autoprint]);
 
   return (
     <>
