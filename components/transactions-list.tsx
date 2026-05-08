@@ -79,17 +79,21 @@ export default function TransactionsList() {
 
           const blob = await response.blob();
 
-          const urlParts = certUrl.split("/");
-          let filename = urlParts[urlParts.length - 1].split("?")[0];
-
-          if (!filename || filename.length < 3) {
-            const drumIds = group.transactions
-              .filter((tx) => tx.drum_id.testcertificate === certUrl)
-              .map((tx) => tx.drum_id.drum_id)
-              .join("_");
-            const ext = blob.type === "application/pdf" ? "pdf" : "jpg";
-            filename = `certificate_${drumIds}_${i + 1}.${ext}`;
+          const txWithCert = group.transactions.find(
+            (tx) => tx.drum_id.testcertificate === certUrl
+          );
+          let filename = `certificate_${i + 1}`;
+          
+          if (txWithCert) {
+            const cut = txWithCert.length_cut;
+            const type = txWithCert.drum_id.type.type_name;
+            const size = txWithCert.drum_id.size;
+            const drumId = txWithCert.drum_id.drum_id.replace(/\//g, "_");
+            filename = `${cut}m -${size} - ${type} ${drumId ? ` - ${drumId}` : ""}`;
           }
+          
+          const ext = blob.type === "application/pdf" ? "pdf" : "jpg";
+          filename = `${filename}.${ext}`;
 
           zip.file(filename, blob);
           successCount++;
