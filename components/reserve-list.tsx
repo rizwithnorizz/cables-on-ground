@@ -328,7 +328,7 @@ export default function ReserveList() {
 
         const { error: updateErr } = await supabase
           .from("drum_cables")
-          .update({ reserved: true, partial_reserved: amt < it.available })
+          .update({ reserved: true, partial_reserved: !(amt <= it.available) })
           .eq("id", it.id);
         if (updateErr) throw updateErr;
       }

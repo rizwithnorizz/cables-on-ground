@@ -188,10 +188,17 @@ export default function ReservationsList() {
       if (!otherReservations || otherReservations.length === 0) {
         const { error: updateErr } = await supabase
           .from("drum_cables")
-          .update({ reserved: false })
+          .update({ reserved: false, partial_reserved: false })
           .eq("id", itemToDelete.drumId);
 
         if (updateErr) throw updateErr;
+      } else { 
+         const { error: updateErr } = await supabase
+          .from("drum_cables")
+          .update({ partial_reserved: true })
+          .eq("id", itemToDelete.drumId);
+        if (updateErr) throw updateErr;
+
       }
 
       setReservations((prev) => prev.filter((r) => r.id !== itemToDelete.id));
