@@ -9,6 +9,7 @@ type DrumCable = {
   initial_length: number;
   testcertificate?: string | null;
   disabled: boolean;
+  partial_reserved: boolean;
 };
 
 type CableCardProps = {
@@ -29,15 +30,16 @@ export function CableCard({ cable, onSelect }: CableCardProps) {
     <button
       onClick={() => onSelect(cable)}
       className={`space-y-2 dark:bg-[#111827]/80 border dark:border-[#0047FF]/30 border-gray-200 rounded-lg shadow-lg ${
-        cable.reserved ? "bg-green-600 dark:shadow-[#00FF00]/50" : "dark:shadow-[#0047FF]/10"
+        cable.reserved ? (cable.partial_reserved ? "border-yellow-500 border-solid border-2 dark:shadow-[#00FF00]/50" : "bg-yellow-500  dark:bg-yellow-500") : "dark:shadow-[#0047FF]/10"
       } ${
-        !cable.testcertificate ? "bg-red-500" : " "
+        !cable.testcertificate ? "border-2 border-red-500" : " "
       } w-full h-full p-4 flex flex-col items-center justify-center transition-transform hover:scale-[1.02]
-      ${cable.disabled ? "opacity-50 border-lg border-red-500" : "cursor-pointer"}`}
+      ${cable.disabled ? "opacity-50 border-lg border-red-500" : "cursor-pointer"}
+      `}
       title={cable.disabled ? "This cable is disabled" : ""}
       
     >
-      <div className={`text-sm items-center flex justify-center text-foreground ${cable.reserved ? "text-white" : ""}`}>
+      <div className={`text-sm items-center flex justify-center text-foreground ${cable.reserved ? "dark:text-white" : ""}`}>
         {cable.curr_length} M
       </div>
     </button>
