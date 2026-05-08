@@ -51,6 +51,13 @@ export async function updateSession(request: NextRequest) {
   const publicRoutes = ["/auth", "/login"];
   const isPublicRoute = publicRoutes.some(route => request.nextUrl.pathname.startsWith(route)) || request.nextUrl.pathname === "/";
 
+  // If user is authenticated and trying to access auth routes, redirect to cables_view
+  if (user && isPublicRoute && request.nextUrl.pathname !== "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/cables_view";
+    return NextResponse.redirect(url);
+  }
+
   if (!user && !isPublicRoute) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
