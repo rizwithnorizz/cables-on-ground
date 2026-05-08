@@ -334,9 +334,13 @@ export default function CutList() {
     // Return the cut length to the local cable inventory
     setAvailableCables((prev) =>
       prev.map((c) =>
-        c.id === itemToRemove.id
-          ? { ...c, curr_length: c.curr_length + cutAmount }
-          : c,
+      c.id === itemToRemove.id
+        ? {
+          ...c,
+          curr_length: c.curr_length + cutAmount,
+          open: c.curr_length + cutAmount === c.initial_length ? false : c.open,
+        }
+        : c,
       ),
     );
 
@@ -640,7 +644,9 @@ export default function CutList() {
         (a.curr_length ?? 0) >= (b.curr_length ?? 0) ? a : b,
       );
     }
-
+    if (chosen.open === false) {
+      chosen.open = true;
+    }
     // Optimistically reduce the drum's length in local state
     setAvailableCables((prev) =>
       prev.map((c) =>

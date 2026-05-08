@@ -503,9 +503,9 @@ export default function CableModal({
     <div className="fixed md:ml-64 inset-0 flex items-center justify-center z-[998]">
       <div className="absolute inset-0 bg-black/60" onClick={() => { onClose(); setShowSmallCableSelector(false);}} />
 
-      <div className="relative z-10 w-full max-w-5xl mx-4 bg-white dark:bg-[#0f1724] rounded-2xl border dark:border-[#0047FF]/30 border-gray-200 p-6 shadow-lg dark:shadow-lg flex gap-6 max-h-[85vh] overflow-hidden">
+      <div className="relative z-10 w-full max-w-5xl mx-4 bg-white dark:bg-[#0f1724] rounded-2xl border dark:border-[#0047FF]/30 border-gray-200 p-6 shadow-lg dark:shadow-lg md:flex gap-6 max-h-[85vh] overflow-hidden overflow-y-auto">
         {/* Left column */}
-        <div className="w-2/3 overflow-y-auto pr-4">
+        <div className="md:w-2/3 overflow-y-auto pr-4">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold dark:text-gray-200">
@@ -887,7 +887,7 @@ export default function CableModal({
           </div>
 
           {reservations.length > 0 && (
-            <div className="mt-6 dark:bg-[#1a1f3a] p-4 rounded-lg border dark:border-[#0047FF]/10">
+            <div className="mt-6 dark:bg-[#1a1f3a] p-4 rounded-lg border dark:border-[#0047FF]/10 bg-gray-100">
               <h4 className="text-sm font-semibold dark:text-gray-200 mb-3">Reservations</h4>
               <div className="space-y-2">
                 {reservations.map((res) => (
@@ -911,7 +911,7 @@ export default function CableModal({
         </div>
 
         {/* Right column: Transaction history */}
-        <div className="w-1/2 border-l border-[#ffffff0a] pl-6 overflow-y-auto max-h-[65vh]">
+        <div className="md:w-1/2 border-l border-[#ffffff0a] md:pl-6  pt-10 md:pt-0 *:overflow-y-auto md:max-h-[70vh]">
           <h3 className="text-lg font-semibold black:text-gray-100">
             Transaction History
           </h3>
