@@ -32,7 +32,7 @@ export function CableCard({ cable, onSelect }: CableCardProps) {
       className={`space-y-2 dark:bg-[#111827]/80 dark:border-[#0047FF]/30 border-gray-200 border-2 rounded-lg rounded-b-none shadow-lg ${
         cable.reserved ? (cable.partial_reserved ? "border-yellow-500 dark:border-yellow-500 border-2" : "bg-yellow-500  dark:bg-yellow-500 dark:border-transparent") : "dark:shadow-[#0047FF]/10"
       } ${
-        !cable.testcertificate ? "border-l-red-500 border-l-8 rounded-l-none" : " "
+        !cable.testcertificate ? "border-l-red-500 dark:border-l-red-500 border-l-8 rounded-l-none" : " "
       } w-full h-full p-4 flex flex-col items-center justify-center transition-transform hover:scale-[1.02]
       ${cable.disabled ? "opacity-50 border-lg border-red-500 border-2" : "cursor-pointer"}
       `}
