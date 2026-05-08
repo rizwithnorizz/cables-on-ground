@@ -505,7 +505,7 @@ export default function CableModal({
 
       <div className="relative z-10 w-full max-w-5xl mx-4 bg-white dark:bg-[#0f1724] rounded-2xl border dark:border-[#0047FF]/30 border-gray-200 p-6 shadow-lg dark:shadow-lg md:flex gap-6 max-h-[85vh] overflow-hidden overflow-y-auto">
         {/* Left column */}
-        <div className="md:w-2/3 overflow-y-auto pr-4">
+        <div className="md:w-2/3 overflow-y-auto ">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold dark:text-gray-200">
