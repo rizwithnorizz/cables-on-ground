@@ -4,7 +4,7 @@ A cable and drum reservation system built for fast-paced field operations.
 
 ## Operations
 
-* Cable and wire inventory management
+* Cable inventory management
 * Drum tracking with current and initial lengths
 * Real-time reservation system
 * Partial reservation handling
