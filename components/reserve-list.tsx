@@ -24,6 +24,7 @@ type ReserveItem = {
   type: number;
   size: string;
   available: number;
+  curr_length: number;
   reserveLength: string;
   reservationRef?: string;
   reserve_version: number;
@@ -205,7 +206,8 @@ export default function ReserveList() {
         drum_id: cable.drum_id,
         brand: cable.brand,
         type: cable.type,
-        available: cable.curr_length, // baseline — before this reservation
+        available: cable.available, // baseline — before this reservation
+        curr_length: cable.curr_length,
         size: cable.size,
         reserveLength: reserveLen ?? "",
         reservationRef: "",
@@ -324,13 +326,6 @@ export default function ReserveList() {
           },
         ]);
         if (insertErr) throw insertErr;
-
-
-        const { error: updateErr } = await supabase
-          .from("drum_cables")
-          .update({ reserved: true, partial_reserved: !(amt <= it.available) })
-          .eq("id", it.id);
-        if (updateErr) throw updateErr;
       }
 
       toast.success("Reservation recorded successfully.");

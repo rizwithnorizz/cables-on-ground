@@ -12,12 +12,14 @@ type DrumCable = {
   brand: number | string;
   type: number | string;
   size: string;
-  reserved: boolean;
   curr_length: number;
   initial_length: number;
   testcertificate?: string | null;
   disabled: boolean;
-  partial_reserved: boolean;
+  reservation : { 
+    id: number;
+    length: number;
+  }[];
 };
 
 type CableType = {
@@ -54,7 +56,26 @@ export function DrumsTable() {
         const [cablesResult, typesResult, brandsResult] = await Promise.all([
           supabase
             .from("drum_cables")
-            .select("*")
+
+            .select(
+              `
+            id,
+            drum_id,
+            brand,
+            size,
+            curr_length,
+            initial_length,
+            testcertificate,
+            type,
+            reserved,
+            open,
+            disabled,
+            reservation (
+              id,
+              length
+            )
+            `
+            )
             .order("curr_length", { ascending: false }),
           supabase
             .from("type")
@@ -71,6 +92,7 @@ export function DrumsTable() {
         }
 
         if (isMounted) {
+          console.log("Loaded cables:", cablesResult.data);
           setCables(cablesResult.data ?? []);
           setTypes(typesResult.data ?? []);
           setBrands(brandsResult.data ?? []);
@@ -231,7 +253,9 @@ export function DrumsTable() {
     <div className="p-8 space-y-6 relative z-10">
       <div>
         <div className="flex justify-between">
-          <h1 className="text-3xl font-bold mb-6 text-blue-500 dark:text-white">Drums Inventory</h1>
+          <h1 className="text-3xl font-bold mb-6 text-blue-500 dark:text-white">
+            Drums Inventory
+          </h1>
 
           {/* Download Button */}
           <div className="mb-4 flex justify-end">

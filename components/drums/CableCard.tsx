@@ -4,12 +4,14 @@ type DrumCable = {
   brand: number | string;
   type: number | string;
   size: string;
-  reserved: boolean;
   curr_length: number;
   initial_length: number;
   testcertificate?: string | null;
   disabled: boolean;
-  partial_reserved: boolean;
+  reservation: { 
+    id: number;
+    length: number;
+  }[];
 };
 
 type CableCardProps = {
@@ -18,6 +20,7 @@ type CableCardProps = {
 };
 
 export function CableCard({ cable, onSelect }: CableCardProps) {
+  const totalReserved = cable ? cable.reservation.reduce((sum, r) => sum + r.length, 0) : 0;
   if (!cable) {
     return (
       <div className="text-gray-400 dark:text-gray-500 text-xs italic h-full flex items-center">
@@ -30,7 +33,7 @@ export function CableCard({ cable, onSelect }: CableCardProps) {
     <button
       onClick={() => onSelect(cable)}
       className={`space-y-2 dark:bg-[#111827]/80 dark:border-[#0047FF]/30 border-gray-200 border-2 rounded-lg rounded-b-none shadow-lg ${
-        cable.reserved ? (cable.partial_reserved ? "border-yellow-500 dark:border-yellow-500 border-2" : "bg-yellow-500  dark:bg-yellow-500 dark:border-transparent") : "dark:shadow-[#0047FF]/10"
+        cable.reservation.length > 0 ? (totalReserved < cable.curr_length ? "border-yellow-500 dark:border-yellow-500 border-2" : "bg-yellow-500  dark:bg-yellow-500 dark:border-transparent") : "dark:shadow-[#0047FF]/10"
       } ${
         !cable.testcertificate ? "border-l-red-500 dark:border-l-red-500 border-l-8 rounded-l-none" : " "
       } w-full h-full p-4 flex flex-col items-center justify-center transition-transform hover:scale-[1.02]
@@ -39,7 +42,7 @@ export function CableCard({ cable, onSelect }: CableCardProps) {
       title={cable.disabled ? "This cable is disabled" : ""}
       
     >
-      <div className={`text-sm items-center flex justify-center text-foreground ${cable.reserved ? "dark:text-white" : ""}`}>
+      <div className={`text-sm items-center flex justify-center text-foreground ${cable.reservation ? "dark:text-white" : ""}`}>
         {cable.curr_length} M
       </div>
     </button>

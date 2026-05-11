@@ -8,6 +8,7 @@ type ReserveItem = {
   type: number;
   size: string;
   available: number;
+  curr_length: number;
   reserveLength: string;
   reservationRef?: string;
   reserve_version: number;

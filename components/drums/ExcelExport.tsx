@@ -11,7 +11,10 @@ type DrumCable = {
   brand: number | string;
   type: number | string;
   size: string;
-  reserved: boolean;
+  reservation: { 
+    id: number;
+    length: number;
+  }[];
   curr_length: number;
   initial_length: number;
   testcertificate?: string | null;
@@ -81,7 +84,7 @@ export function ExcelExport({ cables, types, brands, brandMap, typeMap }: ExcelE
         size: cable.size,
         curr_length: cable.curr_length,
         initial_length: cable.initial_length,
-        reserved: cable.reserved ? 'Yes' : 'No'
+        reserved: cable.reservation ? 'Yes' : 'No'
       });
     });
 

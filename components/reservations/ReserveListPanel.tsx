@@ -8,6 +8,7 @@ type ReserveItem = {
   brand: number;
   type: number;
   size: string;
+  curr_length: number;
   available: number;
   reserveLength: string;
   reservationRef?: string;

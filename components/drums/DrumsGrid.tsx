@@ -6,12 +6,14 @@ type DrumCable = {
   brand: number | string;
   type: number | string;
   size: string;
-  reserved: boolean;
   curr_length: number;
   initial_length: number;
   testcertificate?: string | null;
   disabled: boolean;
-  partial_reserved: boolean;
+  reservation: { 
+    id: number;
+    length: number;
+  }[];
 };
 
 type DrumsGridProps = {
