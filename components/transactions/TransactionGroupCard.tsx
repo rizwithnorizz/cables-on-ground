@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit, Download, Trash2, Printer } from "lucide-react";
+import { Download, Trash2, Printer } from "lucide-react";
 import { TransactionTable } from "./TransactionTable";
 import { PrintTransactions } from "./PrintTransactions";
 import { createClient } from "@/lib/supabase/client";
@@ -52,7 +52,6 @@ export function TransactionGroupCard({
   const { isAuthenticated, isAdmin } = useAuth();
   const [isReversing, setIsReversing] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [showPrintPanel, setShowPrintPanel] = useState(false);
   const [autoprint, setAutoprint] = useState(false);
 
   const handleReverseTransactions = async () => {
@@ -67,50 +66,15 @@ export function TransactionGroupCard({
     setShowConfirmModal(false);
     setIsReversing(true);
     try {
-      for (const transaction of group.transactions) {
-        // Get current drum data
-        const { data: drum, error: drumError } = await supabase
-          .from("drum_cables")
-          .select("curr_length")
-          .eq("id", transaction.drum_id.id)
-          .single();
+      const { data: reversedCount, error } = await supabase.rpc(
+        "reverse_transaction_group",
+        { p_transaction_ids: group.transactions.map((transaction) => transaction.id) },
+      );
 
-        if (drumError) throw drumError;
-
-        // Add back the cut length
-        const newAvailable = (drum?.curr_length || 0) + transaction.length_cut;
-
-        const { data: updateData, error: updateError } = await supabase
-          .from("drum_cables")
-          .update({ curr_length: newAvailable })
-          .eq("id", transaction.drum_id.id)
-          .select()
-          .single();
-
-        if (updateError) throw updateError;
-        if (updateData && updateData.curr_length === updateData.initial_length) { 
-          const { error: updateOpenError } = await supabase 
-            .from("drum_cables")
-            .update({ open: false })
-            .eq("id", transaction.drum_id.id);
-          if (updateOpenError) throw updateOpenError;
-        }
-        
-      }
-
-      // Delete all transactions in this group
-      const { error: deleteError } = await supabase
-        .from("cable_transactions")
-        .delete()
-        .in(
-          "id",
-          group.transactions.map((t) => t.id)
-        );
-
-      if (deleteError) throw deleteError;
+      if (error) throw error;
 
       toast.success(
-        `Reversed ${group.transactions.length} transaction(s) successfully`
+        `Reversed ${reversedCount ?? group.transactions.length} transaction(s) successfully`
       );
 
       // Refresh the page to see updated data
@@ -177,7 +141,6 @@ export function TransactionGroupCard({
             <>
               <button
                 onClick={() => {
-                setShowPrintPanel(true);
                 setAutoprint(true);
               }}
                 className="flex items-center justify-center gap-1 px-2 py-1 rounded text-xs text-white bg-green-600 hover:bg-green-700 transition"
@@ -218,7 +181,6 @@ export function TransactionGroupCard({
             autoprint={autoprint}
             onAutoprintComplete={() => {
               setAutoprint(false);
-              setShowPrintPanel(false);
             }}
           />
       <ConfirmationModal
