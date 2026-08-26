@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import type { Workbook, Worksheet, Row, Cell, Borders } from 'exceljs';
+import { createClient } from '@/lib/supabase/client';
+import { useState } from 'react';
+import { toast } from 'react-hot-toast';
 
 type DrumInfo = {
   id: number;
@@ -24,7 +27,9 @@ type Transaction = {
 };
 
 type TransactionExcelExportProps = {
-  transactions: Transaction[];
+  searchQuery: string;
+  fromDate: string;
+  toDate: string;
 };
 
 type TransactionRow = {
@@ -50,7 +55,9 @@ const HEADER_COLOR = 'FF366092';
 const ALTERNATE_ROW_COLOR = 'FFF0F0F0';
 const FILE_NAME_PREFIX = 'transactions';
 
-export function TransactionExcelExport({ transactions }: TransactionExcelExportProps) {
+export function TransactionExcelExport({ searchQuery, fromDate, toDate }: TransactionExcelExportProps) {
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [supabase] = useState(createClient);
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', {
@@ -124,7 +131,15 @@ export function TransactionExcelExport({ transactions }: TransactionExcelExportP
   };
 
   const downloadExcelFile = async (): Promise<void> => {
+    setIsDownloading(true);
     try {
+      const { data, error } = await supabase.rpc('get_transaction_export', {
+        p_search: searchQuery || null,
+        p_from_date: fromDate || null,
+        p_to_date: toDate || null,
+      });
+      if (error) throw error;
+      const transactions = (data as Transaction[]) ?? [];
       const workbook: Workbook = new ExcelJS.Workbook();
       const worksheet: Worksheet = workbook.addWorksheet('Transactions');
 
@@ -164,15 +179,19 @@ export function TransactionExcelExport({ transactions }: TransactionExcelExportP
       });
       const fileName = generateFileName();
       downloadFile(blob, fileName);
+      toast.success(`Exported ${transactions.length} transaction(s)`);
     } catch (error) {
       console.error('Error downloading Excel file:', error);
-      // Optionally, you can add toast notification here for user feedback
+      toast.error('Failed to export transactions. Please try again.');
+    } finally {
+      setIsDownloading(false);
     }
   };
 
   return (
-    <Button onClick={downloadExcelFile} className="bg-green-600 text-white hover:bg-green-700">
+    <Button onClick={downloadExcelFile} disabled={isDownloading} className="bg-green-600 text-white hover:bg-green-700">
       <Download className="w-4 h-4 text-center" />
+      {isDownloading ? 'Exporting...' : 'Export all'}
     </Button>
   );
 }

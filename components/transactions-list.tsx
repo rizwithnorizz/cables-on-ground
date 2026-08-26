@@ -261,21 +261,21 @@ export default function TransactionsList() {
   const goToLastPage = async () => {
     if (currentPage >= totalPages) return;
 
+    setLoading(true);
     const filterKey = JSON.stringify({ searchQuery, fromDate, toDate });
-    let page = currentPage;
-    let cursor = transactionPage.next_cursor;
+    let page = 1;
+    let cursor: TransactionPage["next_cursor"] = null;
+    let currentCursor: TransactionPage["next_cursor"] = null;
 
-    while (page < totalPages && cursor) {
-      const nextPage = page + 1;
-      const cursorKey = `${filterKey}:${nextPage}`;
-      cursorByPage.current.set(cursorKey, cursor);
-      const cacheKey = JSON.stringify({ filterKey, cursor });
+    while (page < totalPages) {
+      cursorByPage.current.set(`${filterKey}:${page + 1}`, currentCursor);
+      const cacheKey = JSON.stringify({ filterKey, cursor: currentCursor });
       let next = getCachedPage(cacheKey);
 
       if (!next) {
         const { data, error } = await supabase.rpc("get_transaction_page", {
-          p_cursor_created_at: cursor.created_at,
-          p_cursor_ref: cursor.ref_no,
+          p_cursor_created_at: currentCursor?.created_at ?? null,
+          p_cursor_ref: currentCursor?.ref_no ?? null,
           p_page_size: itemsPerPage,
           p_search: searchQuery || null,
           p_from_date: fromDate || null,
@@ -283,16 +283,23 @@ export default function TransactionsList() {
         });
         if (error) {
           console.error("Failed to find the last transaction page:", error);
+          setLoading(false);
           return;
         }
         next = data as TransactionPage;
         setCachedPage(cacheKey, next);
       }
 
+      page += 1;
       cursor = next.next_cursor;
-      page = nextPage;
+      currentCursor = cursor;
+      if (!cursor && page < totalPages) {
+        setLoading(false);
+        return;
+      }
     }
 
+    setLoading(false);
     setCurrentPage(page);
   };
 
@@ -327,15 +334,23 @@ export default function TransactionsList() {
           </div>
           {loadedTransactions.length > 0 && (
             <div className="mt-2">
-              <TransactionExcelExport transactions={loadedTransactions} />
+              <TransactionExcelExport
+                searchQuery={searchQuery}
+                fromDate={fromDate}
+                toDate={toDate}
+              />
             </div>
           )}
         </div>
 
         {/* Results */}
         {loading ? (
-          <div className="text-center dark:text-gray-400">
-            Loading transactions...
+          <div className="flex min-h-32 items-center justify-center gap-3 text-sm dark:text-gray-400">
+            <span
+              className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"
+              aria-hidden="true"
+            />
+            <span>Loading transactions...</span>
           </div>
         ) : transactionPage.total_count === 0 ? (
           <div className="text-center dark:text-gray-400">
@@ -352,11 +367,11 @@ export default function TransactionsList() {
               startIdx={startIdx}
               endIdx={endIdx}
               totalItems={transactionPage.total_count}
+              isLoading={loading}
               onFirst={() => setCurrentPage(1)}
               onLast={goToLastPage}
               onPrevious={() => setCurrentPage((p) => Math.max(1, p - 1))}
               onNext={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              hasMore={transactionPage.has_more}
             />
             <div className="space-y-4">
               {groupedTransactions.map((group, idx) => (

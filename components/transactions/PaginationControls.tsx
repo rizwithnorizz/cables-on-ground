@@ -6,7 +6,7 @@ type PaginationControlsProps = {
   startIdx: number;
   endIdx: number;
   totalItems: number;
-  hasMore: boolean;
+  isLoading: boolean;
   onFirst: () => void;
   onLast: () => void;
   onPrevious: () => void;
@@ -19,7 +19,7 @@ export function PaginationControls({
   startIdx,
   endIdx,
   totalItems,
-  hasMore,
+  isLoading,
   onFirst,
   onLast,
   onPrevious,
@@ -39,14 +39,14 @@ export function PaginationControls({
         <Button
           variant="secondary"
           onClick={onFirst}
-          disabled={currentPage === 1}
+          disabled={isLoading || currentPage === 1}
         >
           First
         </Button>
         <Button
           variant="secondary"
           onClick={onPrevious}
-          disabled={currentPage === 1}
+          disabled={isLoading || currentPage === 1}
         >
           Previous
         </Button>
@@ -54,14 +54,14 @@ export function PaginationControls({
         <Button
           variant="secondary"
           onClick={onNext}
-          disabled={!hasMore}
+          disabled={isLoading || currentPage === totalPages}
         >
           Next
         </Button>
         <Button
           variant="secondary"
           onClick={onLast}
-          disabled={!hasMore}
+          disabled={isLoading || currentPage === totalPages}
         >
           Last
         </Button>

@@ -69,24 +69,38 @@ with filtered as (
     coalesce(ref_no, '') as ref_sort
   from filtered
   group by ref_no
-), page_groups as (
-  select ref_no, max_created_at
+), page_groups_with_extra as (
+  select
+    ref_no,
+    max_created_at,
+    ref_sort,
+    row_number() over (
+      order by max_created_at desc, ref_sort desc
+    ) as row_num
   from grouped
   where p_cursor_created_at is null
     or (max_created_at, ref_sort) < (p_cursor_created_at, coalesce(p_cursor_ref, ''))
   order by max_created_at desc, ref_sort desc
-  limit least(greatest(p_page_size, 1), 100)
+  limit least(greatest(p_page_size, 1) + 1, 101)
+), page_groups as (
+  select ref_no, max_created_at, ref_sort
+  from page_groups_with_extra
+  where row_num <= least(greatest(p_page_size, 1), 100)
 )
 select jsonb_build_object(
   'total_count', (select count(*) from grouped),
-  'has_more', (select count(*) > least(greatest(p_page_size, 1), 100)
-    from grouped g
-    where p_cursor_created_at is null
-      or (g.max_created_at, g.ref_sort) < (p_cursor_created_at, coalesce(p_cursor_ref, ''))),
+  'has_more', exists (
+    select 1
+    from page_groups_with_extra
+    where row_num > least(greatest(p_page_size, 1), 100)
+  ),
   'next_cursor', (select jsonb_build_object(
       'created_at', pg.max_created_at,
       'ref_no', pg.ref_no
-    ) from page_groups pg order by pg.max_created_at asc, coalesce(pg.ref_no, '') asc limit 1),
+    ) from page_groups pg
+    order by pg.max_created_at desc, pg.ref_sort desc
+    offset least(greatest(p_page_size, 1), 100) - 1
+    limit 1),
   'groups', coalesce((
     select jsonb_agg(jsonb_build_object(
       'ref_no', pg.ref_no,
@@ -113,7 +127,7 @@ select jsonb_build_object(
       'totalLength', (select coalesce(sum(f.length_cut), 0) from filtered f where f.ref_no is not distinct from pg.ref_no),
       'minDate', (select min(f.created_at)::date from filtered f where f.ref_no is not distinct from pg.ref_no),
       'maxDate', (select max(f.created_at)::date from filtered f where f.ref_no is not distinct from pg.ref_no)
-    ) order by pg.max_created_at desc)
+    ) order by pg.max_created_at desc, coalesce(pg.ref_no, '') desc)
     from page_groups pg
   ), '[]'::jsonb)
 );
@@ -158,6 +172,49 @@ end;
 $$;
 
 grant execute on function public.get_transaction_page(timestamptz, text, integer, text, date, date)
+  to anon, authenticated;
+
+create or replace function public.get_transaction_export(
+  p_search text default null,
+  p_from_date date default null,
+  p_to_date date default null
+)
+returns jsonb
+language sql
+stable
+security invoker
+set search_path = public
+as $$
+select coalesce(jsonb_agg(jsonb_build_object(
+  'id', ct.id,
+  'created_at', ct.created_at,
+  'length_cut', ct.length_cut,
+  'balance_cable', ct.balance_cable,
+  'ref_no', ct.ref_no,
+  'drum_id', jsonb_build_object(
+    'id', d.id,
+    'drum_id', d.drum_id,
+    'size', d.size,
+    'testcertificate', d.testcertificate,
+    'type', jsonb_build_object('type_name', ty.type_name),
+    'brand', jsonb_build_object('id', b.id, 'brand_name', b.brand_name)
+  )
+) order by ct.created_at desc, ct.id desc), '[]'::jsonb)
+from public.cable_transactions ct
+join public.drum_cables d on d.id = ct.drum_id
+join public.type ty on ty.id = d.type
+join public.brand b on b.id = d.brand
+where (p_from_date is null or ct.created_at >= p_from_date)
+  and (p_to_date is null or ct.created_at < p_to_date + interval '1 day')
+  and (nullif(trim(p_search), '') is null
+    or ct.ref_no ilike '%' || trim(p_search) || '%'
+    or d.drum_id ilike '%' || trim(p_search) || '%'
+    or d.size ilike '%' || trim(p_search) || '%'
+    or ty.type_name ilike '%' || trim(p_search) || '%'
+    or b.brand_name ilike '%' || trim(p_search) || '%');
+$$;
+
+grant execute on function public.get_transaction_export(text, date, date)
   to anon, authenticated;
 grant execute on function public.reverse_transaction_group(text[])
   to authenticated;
