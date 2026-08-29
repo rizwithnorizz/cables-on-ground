@@ -2,6 +2,242 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-settle {
+  from {
+    transform: scale(1.07);
+  }
+  to {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes scroll-nudge {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(4px);
+  }
+}
+
+@keyframes inventory-image-reveal {
+  from {
+    clip-path: inset(14% 0 0 0);
+    filter: saturate(0.78) contrast(0.94);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    filter: saturate(1) contrast(1);
+  }
+}
+
+@keyframes inventory-copy-reveal {
+  from {
+    opacity: 0.35;
+    transform: translateY(2.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes statement-reveal {
+  from {
+    opacity: 0.16;
+    filter: blur(10px);
+    transform: translateY(3rem) scale(0.9);
+  }
+  82% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0) scale(1.018);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes drums-reveal {
+  from {
+    clip-path: inset(18% 0 0 0 round 0.75rem);
+    filter: brightness(0.58) saturate(0.72);
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 0.75rem);
+    filter: brightness(1) saturate(1);
+  }
+}
+
+@keyframes hero-exit {
+  0% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    filter: blur(18px);
+    transform: translate3d(0, -80px, 0) scale(1.04);
+  }
+}
+
+@keyframes statement-pop {
+  0% {
+    opacity: 0;
+    filter: blur(16px) brightness(0.8);
+    transform: translate3d(0, 38px, 0) scale(0.94);
+  }
+  45% {
+    opacity: 0.65;
+    filter: blur(8px) brightness(0.9);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0) brightness(1);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.landing-hero-media,
+.landing-hero-copy,
+.landing-statement .text-balance,
+.landing-drums-image,
+.landing-feature-copy {
+  opacity: 1;
+  will-change: opacity, filter, transform;
+}
+
+.landing-hero {
+  opacity: 1;
+}
+
+.landing-hero-media {
+  transform: scale(1.08);
+  transition: opacity 900ms ease, filter 980ms ease, transform 1200ms ease;
+}
+
+.landing-hero-copy {
+  transform: translateY(32px);
+  transition: opacity 900ms ease, filter 980ms ease, transform 1000ms ease;
+}
+
+.landing-hero:not(.is-visible) .landing-hero-media,
+.landing-hero:not(.is-visible) .landing-hero-copy,
+.landing-statement:not(.is-visible) .text-balance,
+.landing-feature:not(.is-visible) .landing-drums-image,
+.landing-feature:not(.is-visible) .landing-feature-copy {
+  opacity: 0;
+}
+
+.landing-hero.is-visible .landing-hero-media,
+.landing-hero.is-visible .landing-hero-copy {
+  opacity: 1;
+  transform: none;
+  filter: blur(0);
+}
+
+.landing-hero.is-visible .landing-hero-media {
+  animation: hero-settle 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.landing-hero.is-visible .landing-hero-copy {
+  animation: hero-rise 3000ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
+}
+
+.landing-hero.is-exiting .landing-hero-media,
+.landing-hero.is-exiting .landing-hero-copy,
+.landing-statement.is-exiting .text-balance,
+.landing-feature.is-exiting .landing-drums-image,
+.landing-feature.is-exiting .landing-feature-copy {
+  opacity: 0;
+  filter: blur(18px);
+  transform: translate3d(0, -80px, 0) scale(1.04);
+}
+
+.landing-statement .text-balance {
+  opacity: 1;
+  filter: blur(18px);
+  transform: translate3d(0, 56px, 0) scale(0.95);
+  transition: opacity 900ms ease, filter 900ms ease, transform 900ms ease;
+}
+
+.landing-statement.is-visible .text-balance {
+  opacity: 1;
+  filter: blur(0);
+  transform: translate3d(0, 0, 0) scale(1);
+  animation: statement-pop 1200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.landing-drums-image {
+  clip-path: inset(18% 0 0 0 round 0.75rem);
+  filter: brightness(0.58) saturate(0.72);
+  transform: translateY(28px);
+  transition: opacity 900ms ease, filter 900ms ease, clip-path 900ms ease, transform 900ms ease;
+}
+
+.landing-feature.is-visible .landing-drums-image {
+  opacity: 1;
+  clip-path: inset(0 0 0 0 round 0.75rem);
+  filter: brightness(1) saturate(1);
+  transform: translateY(0);
+  animation: drums-reveal 900ms ease both;
+}
+
+.landing-feature-copy {
+  opacity: 0;
+  filter: blur(18px);
+  transform: translateY(2.5rem);
+  transition: opacity 900ms ease, filter 900ms ease, transform 900ms ease;
+}
+
+.landing-feature.is-visible .landing-feature-copy {
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(0);
+  animation: inventory-copy-reveal 850ms ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+
+  .scroll-inventory-image,
+  .scroll-inventory-copy,
+  .scroll-statement,
+  .scroll-drums-image,
+  .scroll-feature-copy {
+    animation: none !important;
+  }
+}
+
 /* ===== CUSTOM SCROLLBAR STYLES ===== */
 
 /* Light Mode Scrollbar */
