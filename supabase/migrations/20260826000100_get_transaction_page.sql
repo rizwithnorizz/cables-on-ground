@@ -143,10 +143,6 @@ declare
   transaction_record record;
   reversed_count integer := 0;
 begin
-  if not exists (select 1 from public.admin_role where uuid = auth.uid()) then
-    raise exception 'Only admins can reverse transactions';
-  end if;
-
   for transaction_record in
     select ct.id, ct.length_cut, ct.drum_id, d.curr_length, d.initial_length
     from public.cable_transactions ct

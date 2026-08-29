@@ -92,7 +92,6 @@ export function DrumsTable() {
         }
 
         if (isMounted) {
-          console.log("Loaded cables:", cablesResult.data);
           setCables(cablesResult.data ?? []);
           setTypes(typesResult.data ?? []);
           setBrands(brandsResult.data ?? []);
