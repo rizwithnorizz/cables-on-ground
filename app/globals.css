@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: "ModernCyber";
+  src: url("../public/fonts/moderncyber.otf") format("woff2");
+  font-weight: 400;
+}
+
+.hero-title {
+  font-family: "ModernCyber", sans-serif;
+  letter-spacing: -0.06em;
+  font-weight: 50;
+  letter-spacing: 0.01em;
+}
+
 @keyframes hero-rise {
   from {
     opacity: 0;

@@ -70,9 +70,9 @@ export function LandingScrollSections({
           className="landing-hero-media object-cover object-center"
         />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,8,12,0.74)_0%,rgba(6,11,16,0.68)_54%,#000000_100%)]" />
-        <div className="landing-hero-copy relative flex max-w-4xl flex-col items-center">
-          <h1 className="max-w-[20rem] text-balance text-4xl font-semibold leading-[0.96] tracking-[-0.04em] text-white sm:max-w-none sm:text-7xl lg:text-[6.25rem]">
-            Cables on Ground
+        <div className="landing-hero-copy relative flex flex-col items-center">
+          <h1 className="hero-title text-4xl font-semibold leading-[0.8] tracking-[-0.08em] text-white sm:max-w-none sm:text-7xl sm:leading-[0.9] lg:text-[6rem] lg:leading-[0.88]">
+            CABLES ON GROUND
           </h1>
           <p className="mt-7 max-w-xl text-base leading-7 text-[#D7DFE8] sm:text-lg sm:leading-8">
             A clear operating view of the cable drums ready for your next move
@@ -94,7 +94,7 @@ export function LandingScrollSections({
       >
         <div className="relative max-w-4xl">
           <p className="text-balance text-4xl font-semibold leading-[1.02] tracking-[-0.035em] text-white sm:text-6xl lg:text-7xl">
-            Inventory that never fails.
+            inventory that never fails
           </p>
         </div>
       </section>
